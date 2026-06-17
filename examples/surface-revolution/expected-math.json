@@ -1,0 +1,11 @@
+{
+  "function": "x*sqrt(x/a)",
+  "derivative": "3*sqrt(x/a)/2",
+  "surface_parametrization": {
+    "x": "x",
+    "y": "f(x)*cos(theta)",
+    "z": "f(x)*sin(theta)"
+  },
+  "area_integrand": "2*pi*f(x)*sqrt(1 + diff(f(x), x)^2)",
+  "canonical_area_integrand": "pi*x**(3/2)*sqrt(4*a + 9*x)/a"
+}

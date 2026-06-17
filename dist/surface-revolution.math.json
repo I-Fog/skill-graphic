@@ -1,0 +1,24 @@
+{
+  "id": "surface-revolution-canonical",
+  "type": "surface_of_revolution",
+  "function": "x**(3/2)/sqrt(a)",
+  "domain": [
+    "0",
+    "a"
+  ],
+  "derivative": "3*sqrt(x)/(2*sqrt(a))",
+  "surface_parametrization": {
+    "x": "x",
+    "y": "x**(3/2)*cos(theta)/sqrt(a)",
+    "z": "x**(3/2)*sin(theta)/sqrt(a)"
+  },
+  "area_integrand": "pi*x**(3/2)*sqrt(4*a + 9*x)/a",
+  "exact_area": "4*pi*a**2*(2*asinh(3/2) + 21*sqrt(13))/243",
+  "checks": {
+    "domain_is_valid": true,
+    "derivative_exists_on_interval": true,
+    "surface_parametrization_matches_axis": true,
+    "area_formula_matches_surface_of_revolution": true
+  },
+  "passed": true
+}

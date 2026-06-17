@@ -1,0 +1,92 @@
+{
+  "id": "surface-revolution-canonical",
+  "type": "surface_of_revolution",
+  "title": "Superficie de revolucion de y = x sqrt(x / a)",
+  "language": "es",
+  "parameters": {
+    "a": {
+      "value": 2,
+      "domain": "a > 0",
+      "min": 0.5,
+      "max": 5,
+      "step": 0.1,
+      "label": "a"
+    }
+  },
+  "math": {
+    "function": "x * sqrt(x / a)",
+    "variable": "x",
+    "domain": ["0", "a"],
+    "rotation_axis": "x"
+  },
+  "controls": {
+    "camera": true,
+    "playback": true,
+    "parameter_sliders": ["a"]
+  },
+  "scenes": [
+    {
+      "id": "axes",
+      "goal": "Presentar el sistema de referencia.",
+      "action": "draw_axes",
+      "duration_ms": 900,
+      "caption": "Primero fijamos el eje OX como eje de giro."
+    },
+    {
+      "id": "curve",
+      "goal": "Dibujar la curva exacta en el intervalo pedido.",
+      "action": "draw_curve",
+      "duration_ms": 1200,
+      "caption": "La curva sale de f(x) = x sqrt(x/a), con 0 <= x <= a."
+    },
+    {
+      "id": "interval",
+      "goal": "Marcar los extremos que limitan la curva.",
+      "action": "highlight_interval",
+      "duration_ms": 700,
+      "caption": "Solo giramos el tramo comprendido entre x = 0 y x = a."
+    },
+    {
+      "id": "axis",
+      "goal": "Identificar el eje alrededor del que gira la curva.",
+      "action": "show_rotation_axis",
+      "duration_ms": 700,
+      "caption": "El eje OX queda fijo; los puntos de la curva describen circunferencias."
+    },
+    {
+      "id": "surface",
+      "goal": "Generar la superficie mediante la rotacion de la curva.",
+      "action": "rotate_curve_into_surface",
+      "duration_ms": 2200,
+      "caption": "Aumentamos theta desde 0 hasta 2 pi y dejamos la superficie trazada."
+    },
+    {
+      "id": "camera",
+      "goal": "Ver la superficie desde una perspectiva lateral.",
+      "action": "move_camera",
+      "duration_ms": 1300,
+      "caption": "La camara panea para que se vea la geometria generada."
+    },
+    {
+      "id": "formula",
+      "goal": "Conectar la geometria con la formula de area.",
+      "action": "show_formula",
+      "duration_ms": 900,
+      "caption": "El area se calcula con la formula de superficie de revolucion.",
+      "formula": "S = 2\\pi\\int_0^a f(x)\\sqrt{1 + (f'(x))^2}\\,dx"
+    },
+    {
+      "id": "validation",
+      "goal": "Mostrar las comprobaciones simbolicas minimas.",
+      "action": "show_validation",
+      "duration_ms": 800,
+      "caption": "Validamos dominio, derivada, parametrizacion y formula antes de dibujar."
+    }
+  ],
+  "checks": [
+    "domain_is_valid",
+    "derivative_exists_on_interval",
+    "surface_parametrization_matches_axis",
+    "area_formula_matches_surface_of_revolution"
+  ]
+}

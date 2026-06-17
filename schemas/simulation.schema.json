@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.codex/skill-graphic/simulation.schema.json",
+  "title": "Educational Simulation Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "title", "language", "parameters", "math", "scenes", "checks"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["surface_of_revolution"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "language": {
+      "type": "string",
+      "enum": ["es", "en"]
+    },
+    "parameters": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["value", "domain"],
+        "properties": {
+          "value": {
+            "type": ["number", "string"]
+          },
+          "domain": {
+            "type": "string",
+            "minLength": 1
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "step": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "math": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["function", "variable", "domain", "rotation_axis"],
+      "properties": {
+        "function": {
+          "type": "string",
+          "minLength": 1
+        },
+        "variable": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+        },
+        "domain": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "string" },
+            { "type": "string" }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "rotation_axis": {
+          "type": "string",
+          "enum": ["x", "y", "z"]
+        }
+      }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "camera": { "type": "boolean" },
+        "playback": { "type": "boolean" },
+        "parameter_sliders": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "goal", "action"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "goal": {
+            "type": "string",
+            "minLength": 1
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "draw_axes",
+              "draw_curve",
+              "highlight_interval",
+              "show_rotation_axis",
+              "rotate_curve_into_surface",
+              "move_camera",
+              "show_formula",
+              "show_validation"
+            ]
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "caption": {
+            "type": "string"
+          },
+          "formula": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "domain_is_valid",
+          "derivative_exists_on_interval",
+          "surface_parametrization_matches_axis",
+          "area_formula_matches_surface_of_revolution"
+        ]
+      },
+      "uniqueItems": true
+    }
+  }
+}
