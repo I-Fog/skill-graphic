@@ -50,12 +50,25 @@ def main() -> int:
         [
             'data-simulation-id="surface-revolution-canonical"',
             '<svg id="plot"',
-            'id="three-root"',
+            'id="surface-wireframe"',
+            'id="timeline"',
+            'id="formula-panel"',
             'rotate_curve_into_surface',
             'Validated:',
             '{"id": "surface-revolution-canonical"',
+            'function easeInOut(t)',
+            'function setTimelineValue(value)',
         ],
     )
+    html_text = HTML_OUTPUT.read_text(encoding="utf-8")
+    if 'id="three-root"' in html_text:
+        raise AssertionError("Generated HTML must use one visual stage, not a separate 3D panel.")
+    if 'addEventListener("resize", resize)' in html_text:
+        raise AssertionError("Generated HTML references a removed resize handler.")
+    if 'id="progress"' in html_text:
+        raise AssertionError("Generated HTML must expose the timeline as a scrubber, not a passive progress span.")
+    if '<section class="detail">' in html_text or 'id="checks"' in html_text:
+        raise AssertionError("Generated HTML must not include the removed lower formula/checks band.")
     assert "&quot;" not in HTML_OUTPUT.read_text(encoding="utf-8").split('id="simulation-data"', 1)[1].split("</script>", 1)[0]
 
     print(f"Smoke tests passed: {HTML_OUTPUT}")

@@ -62,10 +62,10 @@
     },
     {
       "id": "camera",
-      "goal": "Ver la superficie desde una perspectiva lateral.",
+      "goal": "Acercar la camara al punto mas alto y girar a una vista frontal.",
       "action": "move_camera",
-      "duration_ms": 1300,
-      "caption": "La camara panea para que se vea la geometria generada."
+      "duration_ms": 2200,
+      "caption": "Nos acercamos al extremo superior de la curva y paneamos hacia la vista frontal de la revolucion."
     },
     {
       "id": "formula",

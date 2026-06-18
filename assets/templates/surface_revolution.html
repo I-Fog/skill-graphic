@@ -29,14 +29,13 @@
     main {
       height: 100vh;
       display: grid;
-      grid-template-rows: minmax(0, 1fr) auto 54px;
+      grid-template-rows: minmax(0, 1fr) 54px;
     }
 
     .stage {
       position: relative;
       min-height: 0;
-      display: grid;
-      grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.1fr);
+      display: block;
       border-bottom: 1px solid var(--line);
       background: var(--surface);
     }
@@ -44,25 +43,14 @@
     .panel {
       position: relative;
       min-width: 0;
+      height: 100%;
       min-height: 0;
-      border-right: 1px solid var(--line);
     }
 
-    .panel:last-child { border-right: 0; }
-
-    svg, #three-root {
+    svg {
       width: 100%;
       height: 100%;
       display: block;
-    }
-
-    #surface-wireframe {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      background: #ffffff;
     }
 
     .overlay {
@@ -90,32 +78,28 @@
       line-height: 1.35;
     }
 
-    .detail {
-      min-height: 96px;
-      padding: 12px 16px;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 16px;
-      align-items: center;
-      border-bottom: 1px solid var(--line);
-      background: #ffffff;
+    .formula-float {
+      position: absolute;
+      right: 18px;
+      top: 18px;
+      max-width: min(390px, calc(100% - 36px));
+      padding: 12px 14px;
+      border: 1px solid rgba(23, 32, 42, 0.14);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 420ms ease;
     }
 
-    .formula {
-      margin: 0;
-      font-family: "Cambria Math", Cambria, Georgia, serif;
-      font-size: clamp(16px, 2.2vw, 24px);
-      line-height: 1.25;
-      overflow-wrap: anywhere;
-    }
-
-    .checks {
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.4;
-      text-align: right;
-      max-width: 340px;
+    .formula-float code {
+      display: block;
+      color: var(--ink);
+      font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+      font-size: clamp(13px, 1.6vw, 18px);
+      line-height: 1.45;
+      white-space: pre-wrap;
     }
 
     footer {
@@ -139,20 +123,12 @@
 
     button:hover { border-color: var(--accent); }
 
-    .progress {
+    .timeline {
       flex: 1;
+      min-width: 160px;
       height: 6px;
-      border-radius: 999px;
-      background: #e8edf2;
-      overflow: hidden;
-    }
-
-    .progress span {
-      display: block;
-      height: 100%;
-      width: 0%;
-      background: var(--accent);
-      transition: width 260ms ease;
+      accent-color: var(--accent);
+      cursor: pointer;
     }
 
     label {
@@ -177,13 +153,10 @@
     .wire-ring { fill: none; stroke: rgba(180, 35, 24, 0.45); stroke-width: 1.2; }
 
     @media (max-width: 760px) {
-      main { grid-template-rows: minmax(0, 1fr) auto 96px; }
-      .stage { grid-template-columns: 1fr; grid-template-rows: 42% 58%; }
-      .panel { border-right: 0; border-bottom: 1px solid var(--line); }
-      .detail { grid-template-columns: 1fr; gap: 6px; }
-      .checks { text-align: left; max-width: none; }
+      main { grid-template-rows: minmax(0, 1fr) 96px; }
       footer { flex-wrap: wrap; align-content: center; }
-      .progress { min-width: 160px; }
+      .timeline { min-width: 160px; }
+      .formula-float { top: auto; right: 12px; bottom: 12px; max-width: calc(100% - 24px); }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -203,92 +176,64 @@
           <g id="grid"></g>
           <path id="x-axis" class="axis" d="M70 340H590"></path>
           <path id="y-axis" class="axis" d="M90 370V40"></path>
-          <text class="axis-label" x="596" y="344">x</text>
-          <text class="axis-label" x="80" y="34">y</text>
+          <text id="x-label" class="axis-label" x="596" y="344">x</text>
+          <text id="y-label" class="axis-label" x="80" y="34">y</text>
           <path id="interval" class="interval" d=""></path>
+          <g id="surface-wireframe" aria-label="Projected 3D surface in the same axes"></g>
           <path id="curve" class="curve" d=""></path>
           <circle id="start-marker" class="marker" r="0"></circle>
           <circle id="end-marker" class="marker" r="0"></circle>
+          <circle id="focus-marker" class="marker" r="0"></circle>
         </svg>
         <div class="overlay" id="plot-caption">
           <strong>{{ title }}</strong>
           <span>{{ first_caption }}</span>
         </div>
-      </div>
-      <div class="panel">
-        <div id="three-root" aria-label="3D surface of revolution"></div>
-        <svg id="surface-wireframe" viewBox="0 0 640 420" role="img" aria-label="Projected 3D wireframe"></svg>
-        <div class="overlay" id="three-caption">
-          <strong>Vista 3D</strong>
-          <span>La superficie se genera desde la parametrizacion validada.</span>
+        <div class="formula-float" id="formula-panel">
+          <code id="formula">{{ initial_formula }}</code>
         </div>
       </div>
-    </section>
-    <section class="detail">
-      <p class="formula" id="formula">{{ initial_formula }}</p>
-      <p class="checks" id="checks">{{ check_summary }}</p>
     </section>
     <footer>
       <button id="prev" type="button" title="Previous scene">‹</button>
       <button id="play" type="button" title="Play or pause">▶</button>
       <button id="next" type="button" title="Next scene">›</button>
       <button id="replay" type="button" title="Replay">↻</button>
-      <div class="progress" aria-label="Scene progress"><span id="progress"></span></div>
+      <input id="timeline" class="timeline" type="range" min="0" max="1" step="0.001" value="0" aria-label="Timeline">
       <label>a <input id="a-slider" type="range" min="{{ a_min }}" max="{{ a_max }}" step="{{ a_step }}" value="{{ a_value }}"></label>
       <label>speed <input id="speed-slider" type="range" min="0.5" max="2" step="0.25" value="1"></label>
     </footer>
   </main>
 
   <script type="application/json" id="simulation-data">{{ simulation_json }}</script>
-  <script type="module">
-    import * as THREE from "../public/vendor/three/three.module.js";
-
+  <script>
+    try {
     const simulation = JSON.parse(document.getElementById("simulation-data").textContent);
     const scenes = simulation.scenes;
     const plot = document.getElementById("plot");
+    const xAxis = document.getElementById("x-axis");
+    const yAxis = document.getElementById("y-axis");
+    const xLabel = document.getElementById("x-label");
+    const yLabel = document.getElementById("y-label");
     const curve = document.getElementById("curve");
     const interval = document.getElementById("interval");
     const startMarker = document.getElementById("start-marker");
     const endMarker = document.getElementById("end-marker");
+    const focusMarker = document.getElementById("focus-marker");
     const plotCaption = document.getElementById("plot-caption");
     const formula = document.getElementById("formula");
-    const progress = document.getElementById("progress");
+    const formulaPanel = document.getElementById("formula-panel");
+    const timeline = document.getElementById("timeline");
     const aSlider = document.getElementById("a-slider");
     const speedSlider = document.getElementById("speed-slider");
     const playButton = document.getElementById("play");
-    const checks = document.getElementById("checks");
     const wireframe = document.getElementById("surface-wireframe");
 
     const requestedScene = Number(new URLSearchParams(window.location.search).get("scene") || 0);
     let sceneIndex = Math.max(0, Math.min(scenes.length - 1, Number.isFinite(requestedScene) ? Math.floor(requestedScene) : 0));
+    let sceneProgress = sceneIndex === 0 ? 0 : 1;
+    let sceneStartedAt = performance.now();
     let playing = false;
-    let timer = 0;
-    let currentSurface = null;
-
-    const root3d = document.getElementById("three-root");
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    root3d.appendChild(renderer.domElement);
-
-    const scene3d = new THREE.Scene();
-    scene3d.background = new THREE.Color(0xf7f9fb);
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    const light = new THREE.DirectionalLight(0xffffff, 2.5);
-    light.position.set(3, 4, 5);
-    scene3d.add(light);
-    scene3d.add(new THREE.AmbientLight(0xffffff, 0.8));
-
-    const axes = new THREE.Group();
-    axes.add(line3d(new THREE.Vector3(0, 0, 0), new THREE.Vector3(4.5, 0, 0), 0x26323c));
-    axes.add(line3d(new THREE.Vector3(0, -2.2, 0), new THREE.Vector3(0, 2.2, 0), 0x98a7b3));
-    axes.add(line3d(new THREE.Vector3(0, 0, -2.2), new THREE.Vector3(0, 0, 2.2), 0x98a7b3));
-    scene3d.add(axes);
-
-    function line3d(a, b, color) {
-      const geometry = new THREE.BufferGeometry().setFromPoints([a, b]);
-      return new THREE.Line(geometry, new THREE.LineBasicMaterial({ color }));
-    }
-
     function f(x, a) {
       return x * Math.sqrt(x / a);
     }
@@ -301,77 +246,113 @@
       return [x0 + (x / a) * width, y0 - (y / a) * height * 0.86];
     }
 
-    function pathForCurve(a, progressRatio = 1) {
-      const steps = Math.max(8, Math.floor(120 * progressRatio));
+    function pointOnCurve(x, y, a, frontView) {
+      const [baseX, baseY] = toScreen(x, y, a);
+      const [frontX, frontY] = projectSurfacePoint(x, y, 0, a, 1);
+      return [
+        baseX + (frontX - baseX) * frontView,
+        baseY + (frontY - baseY) * frontView,
+      ];
+    }
+
+    function pathForCurve(a, progressRatio = 1, frontView = 0) {
+      const clampedProgress = Math.max(0, Math.min(1, progressRatio));
+      if (clampedProgress <= 0.001) return "";
+      const steps = Math.max(8, Math.floor(120 * clampedProgress));
       const points = [];
       for (let i = 0; i <= steps; i++) {
-        const t = (i / 120) * progressRatio;
+        const t = (i / steps) * clampedProgress;
         const x = a * t;
         const y = f(x, a);
-        const [sx, sy] = toScreen(x, y, a);
+        const [sx, sy] = pointOnCurve(x, y, a, frontView);
         points.push(`${i === 0 ? "M" : "L"}${sx.toFixed(2)} ${sy.toFixed(2)}`);
       }
       return points.join(" ");
     }
 
-    function update2d(a, scene) {
-      const curveProgress = scene.action === "draw_axes" ? 0 : scene.action === "draw_curve" ? 0.72 : 1;
-      curve.setAttribute("d", pathForCurve(a, curveProgress));
-      const [x0, y0] = toScreen(0, 0, a);
-      const [x1, y1] = toScreen(a, 0, a);
-      interval.setAttribute("d", scene.action === "highlight_interval" || sceneIndex >= 2 ? `M${x0} ${y0}L${x1} ${y1}` : "");
+    function easeInOut(t) {
+      const clamped = Math.max(0, Math.min(1, t));
+      return clamped < 0.5
+        ? 4 * clamped * clamped * clamped
+        : 1 - Math.pow(-2 * clamped + 2, 3) / 2;
+    }
+
+    function setStrokeProgress(path, ratio) {
+      const length = path.getTotalLength();
+      const visible = Math.max(0, Math.min(1, ratio));
+      path.style.strokeDasharray = `${length}`;
+      path.style.strokeDashoffset = `${length * (1 - visible)}`;
+    }
+
+    function visualState(scene, easedProgress) {
+      const cameraScene = sceneIndex === 5;
+      const focusProgress = cameraScene ? Math.min(1, easedProgress * 1.7) : 0;
+      const maxFrontView = 0.62;
+      const frontView = sceneIndex < 5 ? 0 : sceneIndex === 5 ? easedProgress * maxFrontView : maxFrontView;
+      return {
+        axes: sceneIndex === 0 ? easedProgress : 1,
+        curve: sceneIndex < 1 ? 0 : sceneIndex === 1 ? easedProgress : 1,
+        interval: sceneIndex < 2 ? 0 : sceneIndex === 2 ? easedProgress : 1,
+        theta: sceneIndex < 4 ? 0.01 : sceneIndex === 4 ? Math.PI * 2 * easedProgress : Math.PI * 2,
+        cameraAngle: 0.35 + (0.9 - 0.35) * frontView,
+        focusProgress,
+        frontView,
+      };
+    }
+
+    function update2d(a, state) {
+      const fullView = { x: 0, y: 0, w: 640, h: 420 };
+      const focusView = { x: 250, y: -86, w: 520, h: 520 };
+      const view = {
+        x: fullView.x + (focusView.x - fullView.x) * state.focusProgress,
+        y: fullView.y + (focusView.y - fullView.y) * state.focusProgress,
+        w: fullView.w + (focusView.w - fullView.w) * state.focusProgress,
+        h: fullView.h + (focusView.h - fullView.h) * state.focusProgress,
+      };
+      plot.setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`);
+      const axisStart = pointOnCurve(0, 0, a, state.frontView);
+      const axisEnd = pointOnCurve(a, 0, a, state.frontView);
+      const verticalEnd = pointOnCurve(0, a, a, state.frontView);
+      const [xLabelX, xLabelY] = pointOnCurve(a * 1.03, 0, a, state.frontView);
+      const [yLabelX, yLabelY] = pointOnCurve(0, a * 1.04, a, state.frontView);
+
+      xAxis.setAttribute("d", `M${axisStart[0]} ${axisStart[1]}L${xLabelX} ${xLabelY}`);
+      yAxis.setAttribute("d", `M${axisStart[0]} ${axisStart[1]}L${verticalEnd[0]} ${verticalEnd[1]}`);
+      xLabel.setAttribute("x", xLabelX + 6);
+      xLabel.setAttribute("y", xLabelY + 4);
+      yLabel.setAttribute("x", yLabelX - 10);
+      yLabel.setAttribute("y", yLabelY - 6);
+      xLabel.style.opacity = state.axes > 0.98 ? "1" : "0";
+      yLabel.style.opacity = state.axes > 0.98 ? "1" : "0";
+      setStrokeProgress(xAxis, state.axes);
+      setStrokeProgress(yAxis, state.axes);
+      curve.setAttribute("d", pathForCurve(a, state.curve, state.frontView));
+      const [x0, y0] = axisStart;
+      const [x1, y1] = axisEnd;
+      const [xf, yf] = pointOnCurve(a, f(a, a), a, state.frontView);
+      interval.setAttribute("d", `M${x0} ${y0}L${x1} ${y1}`);
+      setStrokeProgress(interval, state.interval);
       startMarker.setAttribute("cx", x0);
       startMarker.setAttribute("cy", y0);
-      startMarker.setAttribute("r", sceneIndex >= 2 ? 5 : 0);
+      startMarker.setAttribute("r", 5 * state.interval);
       endMarker.setAttribute("cx", x1);
       endMarker.setAttribute("cy", y1);
-      endMarker.setAttribute("r", sceneIndex >= 2 ? 5 : 0);
+      endMarker.setAttribute("r", 5 * state.interval);
+      focusMarker.setAttribute("cx", xf);
+      focusMarker.setAttribute("cy", yf);
+      focusMarker.setAttribute("r", 6 * state.focusProgress);
     }
 
-    function buildSurface(a, thetaMax) {
-      const radial = 48;
-      const angular = 72;
-      const geometry = new THREE.BufferGeometry();
-      const vertices = [];
-      const indices = [];
-
-      for (let i = 0; i <= radial; i++) {
-        const x = (i / radial) * a;
-        const radius = f(x, a);
-        for (let j = 0; j <= angular; j++) {
-          const theta = (j / angular) * thetaMax;
-          vertices.push(x, radius * Math.cos(theta), radius * Math.sin(theta));
-        }
-      }
-
-      for (let i = 0; i < radial; i++) {
-        for (let j = 0; j < angular; j++) {
-          const row = angular + 1;
-          const p = i * row + j;
-          indices.push(p, p + row, p + 1);
-          indices.push(p + 1, p + row, p + row + 1);
-        }
-      }
-
-      geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-      geometry.setIndex(indices);
-      geometry.computeVertexNormals();
-      return new THREE.Mesh(
-        geometry,
-        new THREE.MeshStandardMaterial({
-          color: 0x0f766e,
-          metalness: 0,
-          roughness: 0.48,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: 0.78
-        })
-      );
-    }
-
-    function projectSurfacePoint(x, y, z, a) {
-      const sx = 90 + (x / a) * 360 + y * 42;
-      const sy = 300 - z * 58 - y * 20;
+    function projectSurfacePoint(x, y, z, a, frontView) {
+      const [axisX, axisY] = toScreen(x, 0, a);
+      const sideX = axisX + (y / a) * 38;
+      const sideY = axisY - (z / a) * 258 - (y / a) * 22;
+      const frontCenterX = 590;
+      const frontCenterY = 340;
+      const frontX = frontCenterX + (y / a) * 258 + (x / a - 1) * 18;
+      const frontY = frontCenterY - (z / a) * 258 - (x / a - 1) * 10;
+      const sx = sideX + (frontX - sideX) * frontView;
+      const sy = sideY + (frontY - sideY) * frontView;
       return [sx, sy];
     }
 
@@ -379,11 +360,8 @@
       return points.map((point, index) => `${index === 0 ? "M" : "L"}${point[0].toFixed(2)} ${point[1].toFixed(2)}`).join(" ");
     }
 
-    function updateWireframe(a, thetaMax) {
+    function updateWireframe(a, thetaMax, frontView) {
       const parts = [];
-      const [axisStartX, axisStartY] = projectSurfacePoint(0, 0, 0, a);
-      const [axisEndX, axisEndY] = projectSurfacePoint(a, 0, 0, a);
-      parts.push(`<path class="wire-axis" d="M${axisStartX} ${axisStartY}L${axisEndX} ${axisEndY}"></path>`);
 
       if (thetaMax < 0.05) {
         wireframe.innerHTML = parts.join("");
@@ -401,7 +379,7 @@
         for (let i = 0; i <= xSteps; i++) {
           const x = (i / xSteps) * a;
           const radius = f(x, a);
-          points.push(projectSurfacePoint(x, radius * Math.cos(theta), radius * Math.sin(theta), a));
+          points.push(projectSurfacePoint(x, radius * Math.cos(theta), radius * Math.sin(theta), a, frontView));
         }
         parts.push(`<path class="wire-rib" d="${wirePath(points)}"></path>`);
       }
@@ -412,7 +390,7 @@
         const points = [];
         for (let j = 0; j <= thetaSteps; j++) {
           const theta = (j / thetaSteps) * thetaMax;
-          points.push(projectSurfacePoint(x, radius * Math.cos(theta), radius * Math.sin(theta), a));
+          points.push(projectSurfacePoint(x, radius * Math.cos(theta), radius * Math.sin(theta), a, frontView));
         }
         parts.push(`<path class="wire-ring" d="${wirePath(points)}"></path>`);
       }
@@ -420,81 +398,98 @@
       wireframe.innerHTML = parts.join("");
     }
 
-    function update3d(a, scene) {
-      if (currentSurface) {
-        scene3d.remove(currentSurface);
-        currentSurface.geometry.dispose();
-        currentSurface.material.dispose();
-      }
-      const theta = scene.action === "rotate_curve_into_surface" ? Math.PI * 1.25 : sceneIndex >= 4 ? Math.PI * 2 : 0.01;
-      currentSurface = buildSurface(a, theta);
-      currentSurface.position.x = -a / 2;
-      scene3d.add(currentSurface);
+    function updateSurface(a, state) {
+      updateWireframe(a, state.theta, state.frontView);
+    }
 
-      const cameraAngle = scene.action === "move_camera" || sceneIndex >= 5 ? 0.9 : 0.35;
-      camera.position.set(4.5 * Math.cos(cameraAngle), 2.6, 4.5 * Math.sin(cameraAngle));
-      camera.lookAt(1, 0, 0);
-      updateWireframe(a, theta);
+    function formulaForScene(scene) {
+      if (scene.action === "draw_curve") return "f(x) = x sqrt(x / a)\\n0 <= x <= a";
+      if (scene.action === "show_formula") return scene.formula || simulation.render.initialFormula;
+      if (scene.action === "show_validation") return "checks:\\n- domain ok\\n- derivative ok\\n- parametrization ok";
+      return "";
+    }
+
+    function formulaOpacityForScene(scene) {
+      const hasFormula = formulaForScene(scene).length > 0;
+      if (!hasFormula) return 0;
+      if (sceneProgress < 0.12) return sceneProgress / 0.12;
+      if (sceneProgress > 0.62) return Math.max(0, 1 - (sceneProgress - 0.62) / 0.28);
+      return 1;
     }
 
     function renderScene() {
       const scene = scenes[sceneIndex];
       const a = Number(aSlider.value);
-      update2d(a, scene);
-      update3d(a, scene);
+      const state = visualState(scene, easeInOut(sceneProgress));
+      update2d(a, state);
+      updateSurface(a, state);
       plotCaption.querySelector("strong").textContent = scene.goal;
       plotCaption.querySelector("span").textContent = scene.caption || "";
-      formula.textContent = scene.formula || simulation.render.initialFormula;
-      progress.style.width = `${((sceneIndex + 1) / scenes.length) * 100}%`;
+      formula.textContent = formulaForScene(scene);
+      formulaPanel.style.opacity = String(formulaOpacityForScene(scene));
+      timeline.value = String((sceneIndex + sceneProgress) / scenes.length);
     }
 
-    function resize() {
-      const rect = root3d.getBoundingClientRect();
-      renderer.setSize(Math.max(1, rect.width), Math.max(1, rect.height), false);
-      camera.aspect = Math.max(1, rect.width) / Math.max(1, rect.height);
-      camera.updateProjectionMatrix();
-    }
-
-    function animate() {
-      resize();
-      renderer.render(scene3d, camera);
+    function animate(now = performance.now()) {
+      if (playing) {
+        const duration = (scenes[sceneIndex].duration_ms || 1000) / Number(speedSlider.value);
+        sceneProgress = Math.min(1, (now - sceneStartedAt) / duration);
+        if (sceneProgress >= 1 && sceneIndex < scenes.length - 1) {
+          sceneIndex += 1;
+          sceneProgress = 0;
+          sceneStartedAt = now;
+        } else if (sceneProgress >= 1 && sceneIndex === scenes.length - 1) {
+          playing = false;
+          playButton.textContent = "▶";
+        }
+        renderScene();
+      }
       requestAnimationFrame(animate);
     }
 
     function go(delta) {
       sceneIndex = Math.max(0, Math.min(scenes.length - 1, sceneIndex + delta));
+      sceneProgress = delta > 0 ? 0 : 1;
+      sceneStartedAt = performance.now();
       renderScene();
     }
 
-    function schedule() {
-      clearTimeout(timer);
-      if (!playing) return;
-      const duration = (scenes[sceneIndex].duration_ms || 1000) / Number(speedSlider.value);
-      timer = setTimeout(() => {
-        if (sceneIndex === scenes.length - 1) {
-          playing = false;
-          playButton.textContent = "▶";
-          return;
-        }
-        go(1);
-        schedule();
-      }, duration);
+    function setTimelineValue(value) {
+      const raw = Math.max(0, Math.min(1, Number(value)));
+      const scaled = raw * scenes.length;
+      if (raw >= 1) {
+        sceneIndex = scenes.length - 1;
+        sceneProgress = 1;
+      } else {
+        sceneIndex = Math.max(0, Math.min(scenes.length - 1, Math.floor(scaled)));
+        sceneProgress = scaled - sceneIndex;
+      }
+      sceneStartedAt = performance.now() - sceneProgress * ((scenes[sceneIndex].duration_ms || 1000) / Number(speedSlider.value));
+      renderScene();
     }
 
     document.getElementById("prev").addEventListener("click", () => go(-1));
     document.getElementById("next").addEventListener("click", () => go(1));
     document.getElementById("replay").addEventListener("click", () => {
       sceneIndex = 0;
+      sceneProgress = 0;
+      sceneStartedAt = performance.now();
       renderScene();
-      if (playing) schedule();
     });
     playButton.addEventListener("click", () => {
       playing = !playing;
       playButton.textContent = playing ? "Ⅱ" : "▶";
-      schedule();
+      sceneStartedAt = performance.now() - sceneProgress * ((scenes[sceneIndex].duration_ms || 1000) / Number(speedSlider.value));
     });
     aSlider.addEventListener("input", renderScene);
-    speedSlider.addEventListener("input", schedule);
+    timeline.addEventListener("input", () => {
+      playing = false;
+      playButton.textContent = "▶";
+      setTimelineValue(timeline.value);
+    });
+    speedSlider.addEventListener("input", () => {
+      sceneStartedAt = performance.now() - sceneProgress * ((scenes[sceneIndex].duration_ms || 1000) / Number(speedSlider.value));
+    });
     window.addEventListener("keydown", (event) => {
       if (event.key === "ArrowRight") go(1);
       if (event.key === "ArrowLeft") go(-1);
@@ -503,11 +498,16 @@
         playButton.click();
       }
     });
-    window.addEventListener("resize", resize);
-
-    checks.textContent = simulation.render.checkSummary;
     renderScene();
     animate();
+    } catch (error) {
+      const caption = document.getElementById("plot-caption");
+      if (caption) {
+        caption.querySelector("strong").textContent = "Error de runtime";
+        caption.querySelector("span").textContent = error.message;
+      }
+      throw error;
+    }
   </script>
 </body>
 </html>
