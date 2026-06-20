@@ -25,6 +25,12 @@ INTEGRAL_MATH_OUTPUT = ROOT / "dist" / "indefinite-integral-tan-sin.math.json"
 INTEGRAL_HTML_OUTPUT = ROOT / "dist" / "indefinite-integral-tan-sin.html"
 INTEGRAL_EXPECTED = ROOT / "examples" / "indefinite-integral-tan-sin" / "expected-math.json"
 SURFACE_EXPECTED = ROOT / "examples" / "surface-revolution" / "expected-math.json"
+NEGATIVE_FIXTURES = [
+    ROOT / "examples" / "negative" / "surface-inverted-domain" / "input.json",
+    ROOT / "examples" / "negative" / "function-false-extremum" / "input.json",
+    ROOT / "examples" / "negative" / "function-false-inflection" / "input.json",
+    ROOT / "examples" / "negative" / "function-omitted-asymptote" / "input.json",
+]
 TMP_OUTPUT = ROOT / "dist" / "_tmp-smoke-output.html"
 TMP_MATH_OUTPUT = ROOT / "dist" / "_tmp-stale-math.json"
 
@@ -153,39 +159,10 @@ def assert_validation_fails(example: dict, label: str) -> None:
 
 
 def check_negative_validation_cases(schema: dict) -> None:
-    surface = json.loads(SURFACE_EXAMPLE.read_text(encoding="utf-8"))
-    surface["math"]["domain"] = ["a", "0"]
-    jsonschema.validate(surface, schema)
-    assert_validation_fails(surface, "surface inverted domain")
-
-    cubic = json.loads(FUNCTION_EXAMPLE.read_text(encoding="utf-8"))
-    cubic["math"]["function"] = "x**3"
-    cubic["math"]["derivative"] = "3*x**2"
-    cubic["math"]["antiderivative"] = "x**4/4"
-    cubic["features"]["special_points"] = [{"id": "false-extremum", "kind": "extremum", "x": "0", "y": "0"}]
-    cubic["features"]["highlighted_intervals"] = []
-    jsonschema.validate(cubic, schema)
-    assert_validation_fails(cubic, "x^3 false extremum")
-
-    quartic = json.loads(FUNCTION_EXAMPLE.read_text(encoding="utf-8"))
-    quartic["math"]["function"] = "x**4"
-    quartic["math"]["derivative"] = "4*x**3"
-    quartic["math"]["antiderivative"] = "x**5/5"
-    quartic["features"]["special_points"] = [{"id": "false-inflection", "kind": "inflection", "x": "0", "y": "0"}]
-    quartic["features"]["highlighted_intervals"] = []
-    jsonschema.validate(quartic, schema)
-    assert_validation_fails(quartic, "x^4 false inflection")
-
-    rational = json.loads(FUNCTION_EXAMPLE.read_text(encoding="utf-8"))
-    rational["math"]["function"] = "1/x"
-    rational["math"]["derivative"] = "-1/x**2"
-    rational["math"]["antiderivative"] = "log(x)"
-    rational["features"]["special_points"] = []
-    rational["features"]["highlighted_intervals"] = []
-    rational["features"]["vertical_asymptotes"] = []
-    rational["features"]["discontinuities"] = []
-    jsonschema.validate(rational, schema)
-    assert_validation_fails(rational, "omitted rational asymptote")
+    for fixture_path in NEGATIVE_FIXTURES:
+        fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+        jsonschema.validate(fixture, schema)
+        assert_validation_fails(fixture, fixture_path.as_posix())
 
 
 def check_generator_validation_gate() -> None:

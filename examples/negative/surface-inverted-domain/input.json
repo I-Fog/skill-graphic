@@ -1,0 +1,50 @@
+{
+  "id": "negative-surface-inverted-domain",
+  "type": "surface_of_revolution",
+  "title": "Negative fixture: inverted surface domain",
+  "language": "es",
+  "parameters": {
+    "a": {
+      "value": 2,
+      "domain": "a > 0",
+      "min": 0.5,
+      "max": 5,
+      "step": 0.1,
+      "label": "a"
+    }
+  },
+  "math": {
+    "function": "x * sqrt(x / a)",
+    "variable": "x",
+    "domain": ["a", "0"],
+    "rotation_axis": "x"
+  },
+  "controls": {
+    "camera": true,
+    "playback": true,
+    "parameter_sliders": ["a"]
+  },
+  "scenes": [
+    {
+      "id": "axes",
+      "goal": "Fixture negativo.",
+      "action": "draw_axes"
+    },
+    {
+      "id": "curve",
+      "goal": "Fixture negativo.",
+      "action": "draw_curve"
+    },
+    {
+      "id": "surface",
+      "goal": "Fixture negativo.",
+      "action": "rotate_curve_into_surface"
+    }
+  ],
+  "checks": [
+    "domain_is_valid",
+    "derivative_exists_on_interval",
+    "surface_parametrization_matches_axis",
+    "area_formula_matches_surface_of_revolution"
+  ]
+}

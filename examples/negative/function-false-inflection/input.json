@@ -1,0 +1,53 @@
+{
+  "id": "negative-function-false-inflection",
+  "type": "function_graph",
+  "title": "Negative fixture: x^4 false inflection",
+  "language": "es",
+  "parameters": {},
+  "math": {
+    "function": "x**4",
+    "variable": "x",
+    "domain": ["-2", "2"],
+    "derivative": "4*x**3",
+    "antiderivative": "x**5/5"
+  },
+  "features": {
+    "special_points": [
+      {
+        "id": "false-inflection",
+        "kind": "inflection",
+        "x": "0",
+        "y": "0"
+      }
+    ],
+    "highlighted_intervals": [],
+    "vertical_asymptotes": [],
+    "discontinuities": []
+  },
+  "controls": {
+    "playback": true
+  },
+  "scenes": [
+    {
+      "id": "curve",
+      "goal": "Fixture negativo.",
+      "action": "draw_function_graph"
+    },
+    {
+      "id": "inflection",
+      "goal": "Fixture negativo.",
+      "action": "show_inflection",
+      "targets": ["false-inflection"]
+    }
+  ],
+  "checks": [
+    "function_expression_is_valid",
+    "visual_domain_is_ordered",
+    "derivative_matches_function",
+    "antiderivative_matches_function",
+    "declared_points_match_function",
+    "declared_intervals_match_function",
+    "declared_asymptotes_match_function",
+    "declared_discontinuities_match_function"
+  ]
+}

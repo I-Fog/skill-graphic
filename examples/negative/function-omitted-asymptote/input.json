@@ -1,0 +1,45 @@
+{
+  "id": "negative-function-omitted-asymptote",
+  "type": "function_graph",
+  "title": "Negative fixture: omitted asymptote",
+  "language": "es",
+  "parameters": {},
+  "math": {
+    "function": "1/x",
+    "variable": "x",
+    "domain": ["-2", "2"],
+    "derivative": "-1/x**2",
+    "antiderivative": "log(x)"
+  },
+  "features": {
+    "special_points": [],
+    "highlighted_intervals": [],
+    "vertical_asymptotes": [],
+    "discontinuities": []
+  },
+  "controls": {
+    "playback": true
+  },
+  "scenes": [
+    {
+      "id": "curve",
+      "goal": "Fixture negativo.",
+      "action": "draw_function_graph"
+    },
+    {
+      "id": "asymptote",
+      "goal": "Fixture negativo.",
+      "action": "show_asymptote"
+    }
+  ],
+  "checks": [
+    "function_expression_is_valid",
+    "visual_domain_is_ordered",
+    "derivative_matches_function",
+    "antiderivative_matches_function",
+    "declared_points_match_function",
+    "declared_intervals_match_function",
+    "declared_asymptotes_match_function",
+    "declared_discontinuities_match_function"
+  ]
+}

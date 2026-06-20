@@ -1,0 +1,53 @@
+{
+  "id": "negative-function-false-extremum",
+  "type": "function_graph",
+  "title": "Negative fixture: x^3 false extremum",
+  "language": "es",
+  "parameters": {},
+  "math": {
+    "function": "x**3",
+    "variable": "x",
+    "domain": ["-2", "2"],
+    "derivative": "3*x**2",
+    "antiderivative": "x**4/4"
+  },
+  "features": {
+    "special_points": [
+      {
+        "id": "false-extremum",
+        "kind": "extremum",
+        "x": "0",
+        "y": "0"
+      }
+    ],
+    "highlighted_intervals": [],
+    "vertical_asymptotes": [],
+    "discontinuities": []
+  },
+  "controls": {
+    "playback": true
+  },
+  "scenes": [
+    {
+      "id": "curve",
+      "goal": "Fixture negativo.",
+      "action": "draw_function_graph"
+    },
+    {
+      "id": "extremum",
+      "goal": "Fixture negativo.",
+      "action": "show_extrema",
+      "targets": ["false-extremum"]
+    }
+  ],
+  "checks": [
+    "function_expression_is_valid",
+    "visual_domain_is_ordered",
+    "derivative_matches_function",
+    "antiderivative_matches_function",
+    "declared_points_match_function",
+    "declared_intervals_match_function",
+    "declared_asymptotes_match_function",
+    "declared_discontinuities_match_function"
+  ]
+}

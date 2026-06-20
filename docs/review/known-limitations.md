@@ -1,0 +1,32 @@
+# Known Limitations
+
+## Generic Engine
+
+- `function_graph.html` is not implemented yet.
+- There is no render-model compiler.
+- Surface and integral demos still use template-specific rendering logic.
+- The integral visual primitive is sampled numerically in the browser demo, although the validator knows an exact primitive.
+
+## Contract
+
+- The schema is not yet split into `$defs` and `oneOf`.
+- Scene `args` are accepted structurally but not fully action-typed.
+- Checks are enforced semantically in `python/validator/contract.py`, not directly by JSON Schema.
+
+## Validation
+
+- SymPy expression parsing is still string-based.
+- Function interval validation samples interior points; it is stronger than before but not a full proof for every possible function.
+- Asymptote/discontinuity detection is limited to symbolic denominator roots in current fixtures.
+- Integral final antiderivative validation uses symbolic simplification with numeric fallback on the declared domain to handle log branch simplification.
+
+## Browser Testing
+
+- There is no committed Playwright test suite.
+- Static screenshots are included for review, but they are not a replacement for CI.
+- Smoothness and reversibility of timelines are not measured automatically.
+
+## Security And Portability
+
+- A restricted math parser or AST should replace direct SymPy parsing before accepting arbitrary untrusted contracts.
+- Windows-specific validation paths still appear in local instructions and validation logs.
