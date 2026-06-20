@@ -6,14 +6,22 @@ import sys
 from pathlib import Path
 
 try:
+    from .function_graph import validate_function_graph
+    from .indefinite_integral import validate_indefinite_integral
     from .surface_revolution import validate_surface_of_revolution
 except ImportError:
+    from function_graph import validate_function_graph
+    from indefinite_integral import validate_indefinite_integral
     from surface_revolution import validate_surface_of_revolution
 
 
 def validate_math(simulation: dict) -> dict:
+    if simulation.get("type") == "function_graph":
+        return validate_function_graph(simulation)
     if simulation.get("type") == "surface_of_revolution":
         return validate_surface_of_revolution(simulation)
+    if simulation.get("type") == "indefinite_integral":
+        return validate_indefinite_integral(simulation)
     raise ValueError(f"Unsupported simulation type: {simulation.get('type')}")
 
 

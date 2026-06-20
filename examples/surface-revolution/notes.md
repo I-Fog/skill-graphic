@@ -19,3 +19,11 @@ Required visual moments:
 4. Highlight the rotation axis.
 5. Rotate the curve into a surface while the camera moves.
 6. Reveal the area formula and validation summary.
+
+Current rendering contract:
+
+- Use one visual stage, not a separate 2D/3D split.
+- The surface mesh starts from the drawn curve.
+- Rotation and camera movement happen during the same scene.
+- The timeline can scrub backward and forward.
+- Formula and validation text appear as transient floating overlays.

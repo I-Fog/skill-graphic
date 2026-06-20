@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "checks": {
+    "function_expression_is_valid": true,
+    "visual_domain_is_ordered": true,
+    "derivative_matches_function": true,
+    "antiderivative_matches_function": true,
+    "declared_points_match_function": true,
+    "declared_asymptotes_match_function": true,
+    "declared_discontinuities_match_function": true
+  }
+}

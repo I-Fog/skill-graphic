@@ -205,7 +205,7 @@
     </footer>
   </main>
 
-  <script type="application/json" id="simulation-data">{"id": "surface-revolution-canonical", "type": "surface_of_revolution", "title": "Superficie de revolucion de y = x sqrt(x / a)", "language": "es", "parameters": {"a": {"value": 2, "domain": "a > 0", "min": 0.5, "max": 5, "step": 0.1, "label": "a"}}, "math": {"function": "x * sqrt(x / a)", "variable": "x", "domain": ["0", "a"], "rotation_axis": "x"}, "controls": {"camera": true, "playback": true, "parameter_sliders": ["a"]}, "scenes": [{"id": "axes", "goal": "Presentar el sistema de referencia.", "action": "draw_axes", "duration_ms": 900, "caption": "Primero fijamos el eje OX como eje de giro."}, {"id": "curve", "goal": "Dibujar la curva exacta en el intervalo pedido.", "action": "draw_curve", "duration_ms": 1200, "caption": "La curva sale de f(x) = x sqrt(x/a), con 0 <= x <= a."}, {"id": "interval", "goal": "Marcar los extremos que limitan la curva.", "action": "highlight_interval", "duration_ms": 700, "caption": "Solo giramos el tramo comprendido entre x = 0 y x = a."}, {"id": "axis", "goal": "Identificar el eje alrededor del que gira la curva.", "action": "show_rotation_axis", "duration_ms": 700, "caption": "El eje OX queda fijo; los puntos de la curva describen circunferencias."}, {"id": "surface", "goal": "Generar la superficie mediante la rotacion de la curva.", "action": "rotate_curve_into_surface", "duration_ms": 2200, "caption": "Aumentamos theta desde 0 hasta 2 pi y dejamos la superficie trazada."}, {"id": "camera", "goal": "Acercar la camara al punto mas alto y girar a una vista frontal.", "action": "move_camera", "duration_ms": 2200, "caption": "Nos acercamos al extremo superior de la curva y paneamos hacia la vista frontal de la revolucion."}, {"id": "formula", "goal": "Conectar la geometria con la formula de area.", "action": "show_formula", "duration_ms": 900, "caption": "El area se calcula con la formula de superficie de revolucion.", "formula": "S = 2\\pi\\int_0^a f(x)\\sqrt{1 + (f'(x))^2}\\,dx"}, {"id": "validation", "goal": "Mostrar las comprobaciones simbolicas minimas.", "action": "show_validation", "duration_ms": 800, "caption": "Validamos dominio, derivada, parametrizacion y formula antes de dibujar."}], "checks": ["domain_is_valid", "derivative_exists_on_interval", "surface_parametrization_matches_axis", "area_formula_matches_surface_of_revolution"], "render": {"initialFormula": "f(x) = x sqrt(x / a)", "checkSummary": "Validated: domain_is_valid, derivative_exists_on_interval, surface_parametrization_matches_axis, area_formula_matches_surface_of_revolution"}}</script>
+  <script type="application/json" id="simulation-data">{"id": "surface-revolution-canonical", "type": "surface_of_revolution", "title": "Superficie de revolucion de y = x sqrt(x / a)", "language": "es", "parameters": {"a": {"value": 2, "domain": "a > 0", "min": 0.5, "max": 5, "step": 0.1, "label": "a"}}, "math": {"function": "x * sqrt(x / a)", "variable": "x", "domain": ["0", "a"], "rotation_axis": "x"}, "controls": {"camera": true, "playback": true, "parameter_sliders": ["a"]}, "scenes": [{"id": "axes", "goal": "Presentar el sistema de referencia.", "action": "draw_axes", "duration_ms": 900, "caption": "Primero fijamos el eje OX como eje de giro."}, {"id": "curve", "goal": "Dibujar la curva exacta en el intervalo pedido.", "action": "draw_curve", "duration_ms": 1200, "caption": "La curva sale de f(x) = x sqrt(x/a), con 0 <= x <= a."}, {"id": "interval", "goal": "Marcar los extremos que limitan la curva.", "action": "highlight_interval", "duration_ms": 700, "caption": "Solo giramos el tramo comprendido entre x = 0 y x = a."}, {"id": "axis", "goal": "Identificar el eje alrededor del que gira la curva.", "action": "show_rotation_axis", "duration_ms": 700, "caption": "El eje OX queda fijo; los puntos de la curva describen circunferencias."}, {"id": "surface", "goal": "Generar la superficie mientras la camara sigue la curva.", "action": "rotate_curve_into_surface", "duration_ms": 3200, "caption": "La curva rota y la camara se acerca a la zona alta al mismo tiempo."}, {"id": "camera", "goal": "Mantener la vista final de la superficie.", "action": "move_camera", "duration_ms": 900, "caption": "La vista queda estable sobre la superficie ya generada."}, {"id": "formula", "goal": "Conectar la geometria con la formula de area.", "action": "show_formula", "duration_ms": 900, "caption": "El area se calcula con la formula de superficie de revolucion.", "formula": "S = 2\\pi\\int_0^a f(x)\\sqrt{1 + (f'(x))^2}\\,dx"}, {"id": "validation", "goal": "Mostrar las comprobaciones simbolicas minimas.", "action": "show_validation", "duration_ms": 800, "caption": "Validamos dominio, derivada, parametrizacion y formula antes de dibujar."}], "checks": ["domain_is_valid", "derivative_exists_on_interval", "surface_parametrization_matches_axis", "area_formula_matches_surface_of_revolution"], "render": {"initialFormula": "f(x) = x sqrt(x / a)", "checkSummary": "Validated: domain_is_valid, derivative_exists_on_interval, surface_parametrization_matches_axis, area_formula_matches_surface_of_revolution"}}</script>
   <script>
     try {
     const simulation = JSON.parse(document.getElementById("simulation-data").textContent);
@@ -248,10 +248,11 @@
 
     function pointOnCurve(x, y, a, frontView) {
       const [baseX, baseY] = toScreen(x, y, a);
-      const [frontX, frontY] = projectSurfacePoint(x, y, 0, a, 1);
+      const frontX = baseX + (x / a) * 56 * frontView;
+      const frontY = baseY - (y / a) * 92 * frontView;
       return [
-        baseX + (frontX - baseX) * frontView,
-        baseY + (frontY - baseY) * frontView,
+        frontX,
+        frontY,
       ];
     }
 
@@ -285,16 +286,19 @@
     }
 
     function visualState(scene, easedProgress) {
-      const cameraScene = sceneIndex === 5;
-      const focusProgress = cameraScene ? Math.min(1, easedProgress * 1.7) : 0;
+      const surfaceSceneProgress = sceneIndex === 4 ? easedProgress : sceneIndex > 4 ? 1 : 0;
+      const cameraSceneProgress = sceneIndex === 4 ? easedProgress : sceneIndex > 4 ? 1 : 0;
+      const surfaceProgress = surfaceSceneProgress;
+      const focusProgress = cameraSceneProgress;
       const maxFrontView = 0.62;
-      const frontView = sceneIndex < 5 ? 0 : sceneIndex === 5 ? easedProgress * maxFrontView : maxFrontView;
+      const frontView = cameraSceneProgress * maxFrontView;
       return {
         axes: sceneIndex === 0 ? easedProgress : 1,
         curve: sceneIndex < 1 ? 0 : sceneIndex === 1 ? easedProgress : 1,
         interval: sceneIndex < 2 ? 0 : sceneIndex === 2 ? easedProgress : 1,
-        theta: sceneIndex < 4 ? 0.01 : sceneIndex === 4 ? Math.PI * 2 * easedProgress : Math.PI * 2,
+        theta: sceneIndex < 4 ? 0.01 : Math.PI * 2 * surfaceSceneProgress,
         cameraAngle: 0.35 + (0.9 - 0.35) * frontView,
+        surfaceProgress,
         focusProgress,
         frontView,
       };
@@ -302,12 +306,19 @@
 
     function update2d(a, state) {
       const fullView = { x: 0, y: 0, w: 640, h: 420 };
-      const focusView = { x: 250, y: -86, w: 520, h: 520 };
+      const surfaceView = fullView;
+      const focusView = { x: 120, y: -190, w: 650, h: 1020 };
+      const baseView = {
+        x: fullView.x + (surfaceView.x - fullView.x) * state.surfaceProgress,
+        y: fullView.y + (surfaceView.y - fullView.y) * state.surfaceProgress,
+        w: fullView.w + (surfaceView.w - fullView.w) * state.surfaceProgress,
+        h: fullView.h + (surfaceView.h - fullView.h) * state.surfaceProgress,
+      };
       const view = {
-        x: fullView.x + (focusView.x - fullView.x) * state.focusProgress,
-        y: fullView.y + (focusView.y - fullView.y) * state.focusProgress,
-        w: fullView.w + (focusView.w - fullView.w) * state.focusProgress,
-        h: fullView.h + (focusView.h - fullView.h) * state.focusProgress,
+        x: baseView.x + (focusView.x - baseView.x) * state.focusProgress,
+        y: baseView.y + (focusView.y - baseView.y) * state.focusProgress,
+        w: baseView.w + (focusView.w - baseView.w) * state.focusProgress,
+        h: baseView.h + (focusView.h - baseView.h) * state.focusProgress,
       };
       plot.setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`);
       const axisStart = pointOnCurve(0, 0, a, state.frontView);
@@ -344,13 +355,11 @@
     }
 
     function projectSurfacePoint(x, y, z, a, frontView) {
-      const [axisX, axisY] = toScreen(x, 0, a);
-      const sideX = axisX + (y / a) * 38;
-      const sideY = axisY - (z / a) * 258 - (y / a) * 22;
-      const frontCenterX = 590;
-      const frontCenterY = 340;
-      const frontX = frontCenterX + (y / a) * 258 + (x / a - 1) * 18;
-      const frontY = frontCenterY - (z / a) * 258 - (x / a - 1) * 10;
+      const [baseX, baseY] = toScreen(x, y, a);
+      const sideX = baseX + (z / a) * 30;
+      const sideY = baseY - (z / a) * 18;
+      const frontX = baseX + (x / a) * 56 + (z / a) * 132;
+      const frontY = baseY - (y / a) * 92;
       const sx = sideX + (frontX - sideX) * frontView;
       const sy = sideY + (frontY - sideY) * frontView;
       return [sx, sy];
@@ -468,6 +477,17 @@
       renderScene();
     }
 
+    function initialTimelineFromUrl() {
+      const raw = new URLSearchParams(window.location.search).get("t");
+      if (raw === null) return false;
+      const value = Number(raw);
+      if (!Number.isFinite(value)) return false;
+      playing = false;
+      playButton.textContent = "▶";
+      setTimelineValue(value);
+      return true;
+    }
+
     document.getElementById("prev").addEventListener("click", () => go(-1));
     document.getElementById("next").addEventListener("click", () => go(1));
     document.getElementById("replay").addEventListener("click", () => {
@@ -498,7 +518,7 @@
         playButton.click();
       }
     });
-    renderScene();
+    if (!initialTimelineFromUrl()) renderScene();
     animate();
     } catch (error) {
       const caption = document.getElementById("plot-caption");

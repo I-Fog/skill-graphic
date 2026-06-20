@@ -1,0 +1,120 @@
+{
+  "id": "indefinite-integral-tan-sin",
+  "type": "indefinite_integral",
+  "title": "Integral indefinida de tan(x) / (2 sen(x) + 6)",
+  "language": "es",
+  "parameters": {},
+  "math": {
+    "integrand": "tan(x)/(2*sin(x) + 6)",
+    "variable": "x",
+    "domain": ["-1.2", "1.2"],
+    "anchor": "0",
+    "method": "weierstrass_substitution",
+    "substitution": "t = tan(x/2)",
+    "rational_integrand": "-2*t/((t - 1)*(t + 1)*(3*t**2 + 2*t + 3))",
+    "partial_fractions": "3*(3*t + 1)/(8*(3*t**2 + 2*t + 3)) - 1/(4*(t + 1)) - 1/(8*(t - 1))",
+    "antiderivative_t": "-log(t - 1)/8 - log(t + 1)/4 + 3*log(3*t**2 + 2*t + 3)/16",
+    "antiderivative": "-1/8 log|tan(x/2) - 1| - 1/4 log|tan(x/2) + 1| + 3/16 log(3 tan^2(x/2) + 2 tan(x/2) + 3) + C"
+  },
+  "controls": {
+    "playback": true
+  },
+  "scenes": [
+    {
+      "id": "axes",
+      "goal": "Colocar el ejercicio en un plano cartesiano.",
+      "action": "draw_axes",
+      "duration_ms": 800,
+      "caption": "Miramos el integrando como una funcion f(x) en un intervalo sin cortes.",
+      "formula": "\\int \\frac{\\tan x}{2\\sen x + 6}\\,dx"
+    },
+    {
+      "id": "integrand-graph",
+      "goal": "Dibujar la funcion que estamos integrando.",
+      "action": "draw_integrand_graph",
+      "duration_ms": 1200,
+      "caption": "La curva verde es f(x)=tan(x)/(2 sen(x)+6).",
+      "formula": "f(x)=\\frac{\\tan x}{2\\sen x+6}"
+    },
+    {
+      "id": "area",
+      "goal": "Ver la primitiva como area acumulada.",
+      "action": "sweep_signed_area",
+      "duration_ms": 1800,
+      "caption": "Desde x0=0 barremos area firmada bajo f. Ese valor sera F(x).",
+      "formula": "F(x)=\\int_0^x f(u)\\,du"
+    },
+    {
+      "id": "primitive",
+      "goal": "Construir la curva primitiva desde el area.",
+      "action": "draw_primitive_curve",
+      "duration_ms": 1500,
+      "caption": "La curva azul nace del area acumulada: su pendiente coincide con la curva verde.",
+      "formula": "F'(x)=f(x)"
+    },
+    {
+      "id": "family",
+      "goal": "Recordar que la integral indefinida es una familia.",
+      "action": "show_primitive_family",
+      "duration_ms": 1000,
+      "caption": "Cambiar C desplaza la primitiva en vertical sin cambiar su derivada.",
+      "formula": "\\int f(x)\\,dx = F(x)+C"
+    },
+    {
+      "id": "substitution",
+      "goal": "Introducir la sustitucion universal.",
+      "action": "introduce_substitution",
+      "duration_ms": 1300,
+      "caption": "Para obtener una formula exacta usamos t = tan(x/2).",
+      "formula": "t=\\tan(x/2),\\quad \\sen x=\\frac{2t}{1+t^2},\\quad \\cos x=\\frac{1-t^2}{1+t^2},\\quad dx=\\frac{2}{1+t^2}dt"
+    },
+    {
+      "id": "rational",
+      "goal": "Transformar la integral en una fraccion racional.",
+      "action": "transform_integrand",
+      "duration_ms": 1300,
+      "caption": "La grafica ya dio el sentido; ahora calculamos la expresion exacta.",
+      "formula": "\\int \\frac{-2t}{(t-1)(t+1)(3t^2+2t+3)}\\,dt"
+    },
+    {
+      "id": "fractions",
+      "goal": "Separar la fraccion en piezas integrables.",
+      "action": "split_partial_fractions",
+      "duration_ms": 1400,
+      "caption": "La descomposicion prepara los logaritmos.",
+      "formula": "\\frac{3(3t+1)}{8(3t^2+2t+3)}-\\frac{1}{4(t+1)}-\\frac{1}{8(t-1)}"
+    },
+    {
+      "id": "integrate",
+      "goal": "Integrar cada termino.",
+      "action": "integrate_terms",
+      "duration_ms": 1300,
+      "caption": "Cada bloque tiene la forma derivada sobre funcion.",
+      "formula": "-\\frac18\\ln|t-1|-\\frac14\\ln|t+1|+\\frac{3}{16}\\ln(3t^2+2t+3)+C"
+    },
+    {
+      "id": "back",
+      "goal": "Volver a la variable original.",
+      "action": "back_substitute",
+      "duration_ms": 1200,
+      "caption": "Sustituimos t por tan(x/2).",
+      "formula": "-\\frac18\\ln|\\tan(x/2)-1|-\\frac14\\ln|\\tan(x/2)+1|+\\frac{3}{16}\\ln(3\\tan^2(x/2)+2\\tan(x/2)+3)+C"
+    },
+    {
+      "id": "validation",
+      "goal": "Comprobar que la primitiva explica la grafica.",
+      "action": "verify_derivative",
+      "duration_ms": 900,
+      "caption": "Derivar el resultado recupera la curva verde.",
+      "formula": "\\frac{d}{dx}F(x)=\\frac{\\tan x}{2\\sen x+6}"
+    }
+  ],
+  "checks": [
+    "integrand_matches_statement",
+    "visual_domain_avoids_singularities",
+    "weierstrass_substitution_is_valid",
+    "rational_integrand_matches_substitution",
+    "partial_fractions_match",
+    "antiderivative_differentiates_to_integrand"
+  ]
+}

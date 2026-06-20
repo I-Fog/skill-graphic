@@ -1,0 +1,169 @@
+{
+  "id": "function-graph-cubic",
+  "type": "function_graph",
+  "title": "Funcion cubica con extremos, derivada y primitiva",
+  "language": "es",
+  "parameters": {},
+  "math": {
+    "function": "x**3 - 3*x",
+    "variable": "x",
+    "domain": ["-2.2", "2.2"],
+    "derivative": "3*x**2 - 3",
+    "antiderivative": "x**4/4 - 3*x**2/2"
+  },
+  "features": {
+    "special_points": [
+      {
+        "id": "root-left",
+        "kind": "root",
+        "x": "-sqrt(3)",
+        "y": "0",
+        "label": "raiz"
+      },
+      {
+        "id": "root-center",
+        "kind": "root",
+        "x": "0",
+        "y": "0",
+        "label": "raiz e inflexion"
+      },
+      {
+        "id": "root-right",
+        "kind": "root",
+        "x": "sqrt(3)",
+        "y": "0",
+        "label": "raiz"
+      },
+      {
+        "id": "max-local",
+        "kind": "extremum",
+        "x": "-1",
+        "y": "2",
+        "label": "maximo local"
+      },
+      {
+        "id": "min-local",
+        "kind": "extremum",
+        "x": "1",
+        "y": "-2",
+        "label": "minimo local"
+      },
+      {
+        "id": "inflection-origin",
+        "kind": "inflection",
+        "x": "0",
+        "y": "0",
+        "label": "inflexion"
+      }
+    ],
+    "highlighted_intervals": [
+      {
+        "id": "decreasing-middle",
+        "start": "-1",
+        "end": "1",
+        "kind": "decreasing",
+        "label": "decrece"
+      },
+      {
+        "id": "increasing-left",
+        "start": "-2.2",
+        "end": "-1",
+        "kind": "increasing",
+        "label": "crece"
+      },
+      {
+        "id": "increasing-right",
+        "start": "1",
+        "end": "2.2",
+        "kind": "increasing",
+        "label": "crece"
+      }
+    ],
+    "vertical_asymptotes": [],
+    "discontinuities": []
+  },
+  "controls": {
+    "playback": true
+  },
+  "scenes": [
+    {
+      "id": "axes",
+      "goal": "Fijar el plano y el dominio visual.",
+      "action": "draw_axes",
+      "duration_ms": 700,
+      "caption": "Trabajamos en -2.2 <= x <= 2.2.",
+      "formula": "f(x)=x^3-3x"
+    },
+    {
+      "id": "curve",
+      "goal": "Dibujar la curva de la funcion.",
+      "action": "draw_function_graph",
+      "duration_ms": 1200,
+      "caption": "La curva muestra tres cortes con el eje x.",
+      "formula": "f(x)=x^3-3x"
+    },
+    {
+      "id": "trace",
+      "goal": "Recorrer la funcion con un punto movil.",
+      "action": "trace_point",
+      "duration_ms": 1300,
+      "caption": "El punto permite leer coordenadas y comportamiento local."
+    },
+    {
+      "id": "tangent",
+      "goal": "Relacionar pendiente y derivada.",
+      "action": "show_tangent",
+      "duration_ms": 1100,
+      "caption": "La pendiente viene de f'(x)=3x^2-3.",
+      "formula": "f'(x)=3x^2-3"
+    },
+    {
+      "id": "extrema",
+      "goal": "Marcar maximo y minimo locales.",
+      "action": "show_extrema",
+      "duration_ms": 1100,
+      "caption": "En x=-1 y x=1 la derivada se anula.",
+      "formula": "f'(-1)=0,\\quad f'(1)=0"
+    },
+    {
+      "id": "inflection",
+      "goal": "Marcar el cambio de concavidad.",
+      "action": "show_inflection",
+      "duration_ms": 900,
+      "caption": "En x=0 se anula la segunda derivada.",
+      "formula": "f''(x)=6x"
+    },
+    {
+      "id": "derivative",
+      "goal": "Dibujar la derivada como funcion relacionada.",
+      "action": "show_derivative_graph",
+      "duration_ms": 1200,
+      "caption": "Los ceros de f' coinciden con los extremos de f.",
+      "formula": "f'(x)=3x^2-3"
+    },
+    {
+      "id": "primitive",
+      "goal": "Conectar la funcion con una primitiva.",
+      "action": "show_antiderivative_graph",
+      "duration_ms": 1200,
+      "caption": "Derivar la primitiva recupera la funcion original.",
+      "formula": "F(x)=x^4/4-3x^2/2"
+    },
+    {
+      "id": "validation",
+      "goal": "Mostrar las comprobaciones simbolicas.",
+      "action": "show_validation",
+      "duration_ms": 800,
+      "caption": "Validamos dominio, derivada, primitiva y puntos antes de dibujar."
+    }
+  ],
+  "checks": [
+    "function_expression_is_valid",
+    "visual_domain_is_ordered",
+    "derivative_matches_function",
+    "antiderivative_matches_function",
+    "declared_points_match_function",
+    "declared_asymptotes_match_function",
+    "declared_discontinuities_match_function"
+  ]
+}

@@ -55,17 +55,17 @@
     },
     {
       "id": "surface",
-      "goal": "Generar la superficie mediante la rotacion de la curva.",
+      "goal": "Generar la superficie mientras la camara sigue la curva.",
       "action": "rotate_curve_into_surface",
-      "duration_ms": 2200,
-      "caption": "Aumentamos theta desde 0 hasta 2 pi y dejamos la superficie trazada."
+      "duration_ms": 3200,
+      "caption": "La curva rota y la camara se acerca a la zona alta al mismo tiempo."
     },
     {
       "id": "camera",
-      "goal": "Acercar la camara al punto mas alto y girar a una vista frontal.",
+      "goal": "Mantener la vista final de la superficie.",
       "action": "move_camera",
-      "duration_ms": 2200,
-      "caption": "Nos acercamos al extremo superior de la curva y paneamos hacia la vista frontal de la revolucion."
+      "duration_ms": 900,
+      "caption": "La vista queda estable sobre la superficie ya generada."
     },
     {
       "id": "formula",

@@ -1,0 +1,25 @@
+{
+  "id": "indefinite-integral-tan-sin",
+  "type": "indefinite_integral",
+  "integrand": "tan(x)/(2*(sin(x) + 3))",
+  "domain": [
+    "-1.20000000000000",
+    "1.20000000000000"
+  ],
+  "anchor": "0",
+  "substitution": "t = tan(x/2)",
+  "rational_integrand": "-2*t/(3*t**4 + 2*t**3 - 2*t - 3)",
+  "computed_rational_integrand": "-2*t/(3*t**4 + 2*t**3 - 2*t - 3)",
+  "partial_fractions": "-2*t/(3*t**4 + 2*t**3 - 2*t - 3)",
+  "antiderivative_t": "-log(t - 1)/8 - log(t + 1)/4 + 3*log(3*t**2 + 2*t + 3)/16",
+  "antiderivative": "-1/8 log|tan(x/2) - 1| - 1/4 log|tan(x/2) + 1| + 3/16 log(3 tan^2(x/2) + 2 tan(x/2) + 3) + C",
+  "checks": {
+    "integrand_matches_statement": true,
+    "visual_domain_avoids_singularities": true,
+    "weierstrass_substitution_is_valid": true,
+    "rational_integrand_matches_substitution": true,
+    "partial_fractions_match": true,
+    "antiderivative_differentiates_to_integrand": true
+  },
+  "passed": true
+}

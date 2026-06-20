@@ -1,0 +1,92 @@
+{
+  "id": "function-graph-cubic",
+  "type": "function_graph",
+  "function": "x*(x**2 - 3)",
+  "domain": [
+    "-2.20000000000000",
+    "2.20000000000000"
+  ],
+  "derivative": "3*x**2 - 3",
+  "antiderivative": "x**2*(x**2 - 6)/4",
+  "features": {
+    "special_points": [
+      {
+        "id": "root-left",
+        "kind": "root",
+        "x": "-sqrt(3)",
+        "y": "0",
+        "label": "raiz"
+      },
+      {
+        "id": "root-center",
+        "kind": "root",
+        "x": "0",
+        "y": "0",
+        "label": "raiz e inflexion"
+      },
+      {
+        "id": "root-right",
+        "kind": "root",
+        "x": "sqrt(3)",
+        "y": "0",
+        "label": "raiz"
+      },
+      {
+        "id": "max-local",
+        "kind": "extremum",
+        "x": "-1",
+        "y": "2",
+        "label": "maximo local"
+      },
+      {
+        "id": "min-local",
+        "kind": "extremum",
+        "x": "1",
+        "y": "-2",
+        "label": "minimo local"
+      },
+      {
+        "id": "inflection-origin",
+        "kind": "inflection",
+        "x": "0",
+        "y": "0",
+        "label": "inflexion"
+      }
+    ],
+    "highlighted_intervals": [
+      {
+        "id": "decreasing-middle",
+        "start": "-1",
+        "end": "1",
+        "kind": "decreasing",
+        "label": "decrece"
+      },
+      {
+        "id": "increasing-left",
+        "start": "-2.2",
+        "end": "-1",
+        "kind": "increasing",
+        "label": "crece"
+      },
+      {
+        "id": "increasing-right",
+        "start": "1",
+        "end": "2.2",
+        "kind": "increasing",
+        "label": "crece"
+      }
+    ],
+    "vertical_asymptotes": [],
+    "discontinuities": []
+  },
+  "checks": {
+    "function_expression_is_valid": true,
+    "visual_domain_is_ordered": true,
+    "derivative_matches_function": true,
+    "antiderivative_matches_function": true,
+    "declared_points_match_function": true,
+    "declared_asymptotes_match_function": true,
+    "declared_discontinuities_match_function": true
+  },
+  "passed": true
+}

@@ -47,6 +47,33 @@ def build_surface_revolution_html(simulation: dict, math_result: dict | None) ->
     return render_template(template, values)
 
 
+def build_indefinite_integral_html(simulation: dict, math_result: dict | None) -> str:
+    template = (ROOT / "assets" / "templates" / "indefinite_integral.html").read_text(encoding="utf-8")
+
+    check_summary = "Checks pending."
+    if math_result:
+        passed = [name for name, ok in math_result["checks"].items() if ok]
+        check_summary = "Validated: " + ", ".join(passed)
+
+    render_payload = dict(simulation)
+    render_payload["render"] = {
+        "initialFormula": simulation["scenes"][0].get("formula", simulation["math"]["integrand"]),
+        "checkSummary": check_summary,
+    }
+
+    values = {
+        "language": html.escape(simulation["language"]),
+        "title": html.escape(simulation["title"]),
+        "simulation_id": html.escape(simulation["id"]),
+        "first_goal": html.escape(simulation["scenes"][0].get("goal", "")),
+        "first_caption": html.escape(simulation["scenes"][0].get("caption", "")),
+        "initial_formula": simulation["scenes"][0].get("formula", simulation["math"]["integrand"]),
+        "check_summary": html.escape(check_summary),
+        "simulation_json": json.dumps(render_payload, ensure_ascii=True).replace("</", "<\\/"),
+    }
+    return render_template(template, values)
+
+
 def load_math_result(path: Path | None) -> dict | None:
     if not path:
         return None
@@ -61,11 +88,14 @@ def main() -> int:
     args = parser.parse_args()
 
     simulation = json.loads(args.input.read_text(encoding="utf-8"))
-    if simulation.get("type") != "surface_of_revolution":
+    math_result = load_math_result(args.math_result)
+    if simulation.get("type") == "surface_of_revolution":
+        html_output = build_surface_revolution_html(simulation, math_result)
+    elif simulation.get("type") == "indefinite_integral":
+        html_output = build_indefinite_integral_html(simulation, math_result)
+    else:
         print(f"Unsupported simulation type: {simulation.get('type')}", file=sys.stderr)
         return 1
-
-    html_output = build_surface_revolution_html(simulation, load_math_result(args.math_result))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(html_output, encoding="utf-8")
     print(args.output)

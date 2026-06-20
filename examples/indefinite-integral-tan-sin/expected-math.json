@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "checks": {
+    "integrand_matches_statement": true,
+    "visual_domain_avoids_singularities": true,
+    "weierstrass_substitution_is_valid": true,
+    "rational_integrand_matches_substitution": true,
+    "partial_fractions_match": true,
+    "antiderivative_differentiates_to_integrand": true
+  }
+}
