@@ -6,6 +6,8 @@ This repo defines a Codex skill and runtime scaffold for exact, interactive educ
 
 - Treat `schemas/simulation.schema.json` as the source contract for simulations.
 - Keep math validation separate from rendering. Renderers must draw from validated definitions, not invent geometry.
+- Treat `scripts/generate_simulation.py` as a validation gate. It must reject stale `math_result` files whose `contract_hash` does not match the input JSON.
+- Scene actions that affect specific objects should use explicit `targets` or `args`.
 - Use `examples/surface-revolution/input.json` as the canonical first fixture.
 - Use `references/functions.md` and `examples/function-graph-cubic/input.json` when changing the reusable function graph contract.
 - Prefer Python scripts for deterministic validation/generation until a TypeScript build pipeline exists.

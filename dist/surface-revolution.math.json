@@ -20,5 +20,6 @@
     "surface_parametrization_matches_axis": true,
     "area_formula_matches_surface_of_revolution": true
   },
-  "passed": true
+  "passed": true,
+  "contract_hash": "f380d76bcbcb91a79be2bc4ddd1b7c4ca6d286487a4b2e39b0745ee978576e45"
 }

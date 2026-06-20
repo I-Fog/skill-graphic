@@ -115,6 +115,10 @@
         "antiderivative": {
           "type": "string",
           "minLength": 1
+        },
+        "antiderivative_check": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },
@@ -269,6 +273,20 @@
           },
           "formula": {
             "type": "string"
+          },
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "args": {
+            "type": "object",
+            "additionalProperties": {
+              "type": ["string", "number", "boolean", "array", "object"]
+            }
           }
         }
       }
@@ -288,6 +306,7 @@
           "derivative_matches_function",
           "antiderivative_matches_function",
           "declared_points_match_function",
+          "declared_intervals_match_function",
           "declared_asymptotes_match_function",
           "declared_discontinuities_match_function",
           "integrand_matches_statement",
@@ -310,6 +329,9 @@
       "then": {
         "properties": {
           "math": {
+            "properties": {
+              "rotation_axis": { "const": "x" }
+            },
             "required": ["function", "variable", "domain", "rotation_axis"]
           }
         }
@@ -346,7 +368,8 @@
               "rational_integrand",
               "partial_fractions",
               "antiderivative_t",
-              "antiderivative"
+              "antiderivative",
+              "antiderivative_check"
             ]
           }
         }

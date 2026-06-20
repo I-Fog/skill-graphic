@@ -85,8 +85,10 @@
     "derivative_matches_function": true,
     "antiderivative_matches_function": true,
     "declared_points_match_function": true,
+    "declared_intervals_match_function": true,
     "declared_asymptotes_match_function": true,
     "declared_discontinuities_match_function": true
   },
-  "passed": true
+  "passed": true,
+  "contract_hash": "823cd6d7ed10b193af6d4e682f26b7a23f9373505640a4bde18e147c72200437"
 }

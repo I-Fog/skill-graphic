@@ -25,6 +25,8 @@ Optional `features`:
 - `vertical_asymptotes`: declared vertical asymptote x-values.
 - `discontinuities`: declared removable or jump discontinuity x-values.
 
+Scene actions that affect a concrete feature should identify it with `targets` or `args`. For example, `show_tangent` should provide `args.point_id` or target a point id.
+
 ## Scene Pattern
 
 Prefer this order when the user has not specified a different pedagogy:
@@ -42,11 +44,11 @@ Prefer this order when the user has not specified a different pedagogy:
 
 - `draw_function_graph`: draw the source curve.
 - `trace_point`: move a point along the curve and update coordinates.
-- `show_tangent`: draw the tangent line and slope at a point.
-- `show_extrema`: highlight maxima or minima.
-- `show_inflection`: highlight changes of concavity.
-- `show_asymptote`: draw and label declared asymptotes.
-- `show_discontinuity`: mark holes or jumps.
+- `show_tangent`: draw the tangent line and slope at `args.point_id` or a targeted point.
+- `show_extrema`: highlight targeted maxima or minima.
+- `show_inflection`: highlight targeted changes of concavity.
+- `show_asymptote`: draw and label targeted asymptotes.
+- `show_discontinuity`: mark targeted holes or jumps.
 - `show_derivative_graph`: draw `f'(x)` as a related curve.
 - `show_antiderivative_graph`: draw a primitive or accumulated-area curve.
 - `compare_function_and_derivative`: connect signs/slopes between `f` and `f'`.

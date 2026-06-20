@@ -28,12 +28,24 @@ def validate_surface_of_revolution(simulation: dict[str, Any]) -> dict[str, Any]
 
     area_integrand = sp.simplify(2 * sp.pi * f * sp.sqrt(1 + derivative**2))
     exact_area = sp.integrate(area_integrand, (x, parsed.domain_start, parsed.domain_end))
+    domain_delta = sp.simplify(parsed.domain_end - parsed.domain_start)
+    domain_ordered = domain_delta.is_positive is True or bool(sp.N(domain_delta.subs({symbol: 1 for symbol in parsed.parameters.values()})) > 0)
+    derivative_samples = [
+        parsed.domain_start + (parsed.domain_end - parsed.domain_start) * sp.Rational(index, 8)
+        for index in range(1, 8)
+    ]
+    derivative_finite = all(
+        value.is_finite is not False
+        for value in (sp.simplify(derivative.subs(x, sample)) for sample in derivative_samples)
+    )
 
     checks = {
-        "domain_is_valid": bool(sp.simplify(parsed.domain_end - parsed.domain_start) != 0),
-        "derivative_exists_on_interval": derivative is not None,
+        "domain_is_valid": domain_ordered,
+        "derivative_exists_on_interval": derivative is not None and derivative_finite,
         "surface_parametrization_matches_axis": surface["x"] == stringify(x),
-        "area_formula_matches_surface_of_revolution": True,
+        "area_formula_matches_surface_of_revolution": sp.simplify(
+            area_integrand - 2 * sp.pi * f * sp.sqrt(1 + derivative**2)
+        ) == 0,
     }
 
     return {

@@ -6,23 +6,29 @@ import sys
 from pathlib import Path
 
 try:
+    from .contract import contract_hash, validate_contract_semantics
     from .function_graph import validate_function_graph
     from .indefinite_integral import validate_indefinite_integral
     from .surface_revolution import validate_surface_of_revolution
 except ImportError:
+    from contract import contract_hash, validate_contract_semantics
     from function_graph import validate_function_graph
     from indefinite_integral import validate_indefinite_integral
     from surface_revolution import validate_surface_of_revolution
 
 
 def validate_math(simulation: dict) -> dict:
+    validate_contract_semantics(simulation)
     if simulation.get("type") == "function_graph":
-        return validate_function_graph(simulation)
-    if simulation.get("type") == "surface_of_revolution":
-        return validate_surface_of_revolution(simulation)
-    if simulation.get("type") == "indefinite_integral":
-        return validate_indefinite_integral(simulation)
-    raise ValueError(f"Unsupported simulation type: {simulation.get('type')}")
+        result = validate_function_graph(simulation)
+    elif simulation.get("type") == "surface_of_revolution":
+        result = validate_surface_of_revolution(simulation)
+    elif simulation.get("type") == "indefinite_integral":
+        result = validate_indefinite_integral(simulation)
+    else:
+        raise ValueError(f"Unsupported simulation type: {simulation.get('type')}")
+    result["contract_hash"] = contract_hash(simulation)
+    return result
 
 
 def main() -> int:

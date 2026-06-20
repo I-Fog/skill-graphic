@@ -17,6 +17,8 @@ Canonical flow:
 request -> simulation JSON -> schema validation -> math/domain validation -> HTML generation -> browser/visual check
 ```
 
+`scripts/generate_simulation.py` is a validation gate, not a blind renderer. It must reject stale, failed, mismatched, or missing math validation using the simulation `contract_hash`.
+
 ## Fast Path
 
 1. Write or update a simulation JSON that follows `schemas/simulation.schema.json`.
@@ -113,6 +115,8 @@ A simulation is not done until:
 
 - the JSON validates against the schema;
 - the relevant math checks pass;
+- required checks for the simulation type and scene actions are present;
+- any math result used by the generator matches the current contract hash;
 - generated HTML opens as a single interactive page;
 - controls support play, pause, replay, previous, next, speed, and a draggable timeline scrubber when practical;
 - formulas and labels refer to visible objects;

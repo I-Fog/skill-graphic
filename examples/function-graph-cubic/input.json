@@ -115,7 +115,11 @@
       "action": "show_tangent",
       "duration_ms": 1100,
       "caption": "La pendiente viene de f'(x)=3x^2-3.",
-      "formula": "f'(x)=3x^2-3"
+      "formula": "f'(x)=3x^2-3",
+      "targets": ["root-center"],
+      "args": {
+        "point_id": "root-center"
+      }
     },
     {
       "id": "extrema",
@@ -123,7 +127,8 @@
       "action": "show_extrema",
       "duration_ms": 1100,
       "caption": "En x=-1 y x=1 la derivada se anula.",
-      "formula": "f'(-1)=0,\\quad f'(1)=0"
+      "formula": "f'(-1)=0,\\quad f'(1)=0",
+      "targets": ["max-local", "min-local"]
     },
     {
       "id": "inflection",
@@ -131,7 +136,8 @@
       "action": "show_inflection",
       "duration_ms": 900,
       "caption": "En x=0 se anula la segunda derivada.",
-      "formula": "f''(x)=6x"
+      "formula": "f''(x)=6x",
+      "targets": ["inflection-origin"]
     },
     {
       "id": "derivative",
@@ -163,6 +169,7 @@
     "derivative_matches_function",
     "antiderivative_matches_function",
     "declared_points_match_function",
+    "declared_intervals_match_function",
     "declared_asymptotes_match_function",
     "declared_discontinuities_match_function"
   ]

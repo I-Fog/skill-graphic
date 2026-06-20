@@ -13,6 +13,10 @@ Each scene represents one conceptual step. Avoid scenes that combine multiple le
 - `duration_ms`: default animation duration for the scene.
 - `caption`: short in-frame explanation.
 - `formula`: TeX-like expression shown in the floating formula overlay.
+- `targets`: stable ids of features or objects the action should affect.
+- `args`: action-specific parameters, such as `point_id`, `interval_id`, or camera/focus values.
+
+Prefer explicit `targets` or `args` whenever an action needs a concrete object. A renderer should not guess which point receives a tangent or which asymptote should be highlighted.
 
 ## MVP Actions
 

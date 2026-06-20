@@ -13,6 +13,7 @@
   "partial_fractions": "-2*t/(3*t**4 + 2*t**3 - 2*t - 3)",
   "antiderivative_t": "-log(t - 1)/8 - log(t + 1)/4 + 3*log(3*t**2 + 2*t + 3)/16",
   "antiderivative": "-1/8 log|tan(x/2) - 1| - 1/4 log|tan(x/2) + 1| + 3/16 log(3 tan^2(x/2) + 2 tan(x/2) + 3) + C",
+  "antiderivative_check": "-log(tan(x/2) - 1)/8 - log(tan(x/2) + 1)/4 + 3*log(2*tan(x/2) + 6/(cos(x) + 1))/16",
   "checks": {
     "integrand_matches_statement": true,
     "visual_domain_avoids_singularities": true,
@@ -21,5 +22,6 @@
     "partial_fractions_match": true,
     "antiderivative_differentiates_to_integrand": true
   },
-  "passed": true
+  "passed": true,
+  "contract_hash": "8e186700dcdc507c01019b8a87e2ce54e6c3421a3f3b5a49cf488be2a7e51c45"
 }

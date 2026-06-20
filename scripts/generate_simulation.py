@@ -6,7 +6,15 @@ import json
 import sys
 from pathlib import Path
 
+import jsonschema
+
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "python" / "validator"))
+
+from contract import contract_hash  # noqa: E402
+from validate_math import validate_math  # noqa: E402
+
+SCHEMA = ROOT / "schemas" / "simulation.schema.json"
 
 
 def render_template(template: str, values: dict[str, str]) -> str:
@@ -16,18 +24,20 @@ def render_template(template: str, values: dict[str, str]) -> str:
     return output
 
 
-def build_surface_revolution_html(simulation: dict, math_result: dict | None) -> str:
+def check_summary_for(math_result: dict) -> str:
+    passed = [name for name, ok in math_result["checks"].items() if ok]
+    return "Validated: " + ", ".join(passed)
+
+
+def build_surface_revolution_html(simulation: dict, math_result: dict) -> str:
     template = (ROOT / "assets" / "templates" / "surface_revolution.html").read_text(encoding="utf-8")
     parameter = simulation["parameters"]["a"]
 
-    check_summary = "Checks pending."
-    if math_result:
-        passed = [name for name, ok in math_result["checks"].items() if ok]
-        check_summary = "Validated: " + ", ".join(passed)
+    check_summary = check_summary_for(math_result)
 
     render_payload = dict(simulation)
     render_payload["render"] = {
-        "initialFormula": "f(x) = x sqrt(x / a)",
+        "initialFormula": f"f(x) = {simulation['math']['function']}",
         "checkSummary": check_summary,
     }
 
@@ -36,7 +46,7 @@ def build_surface_revolution_html(simulation: dict, math_result: dict | None) ->
         "title": html.escape(simulation["title"]),
         "simulation_id": html.escape(simulation["id"]),
         "first_caption": html.escape(simulation["scenes"][0].get("caption", "")),
-        "initial_formula": "f(x) = x sqrt(x / a)",
+        "initial_formula": html.escape(f"f(x) = {simulation['math']['function']}"),
         "check_summary": html.escape(check_summary),
         "a_value": str(parameter["value"]),
         "a_min": str(parameter.get("min", 0.5)),
@@ -47,13 +57,10 @@ def build_surface_revolution_html(simulation: dict, math_result: dict | None) ->
     return render_template(template, values)
 
 
-def build_indefinite_integral_html(simulation: dict, math_result: dict | None) -> str:
+def build_indefinite_integral_html(simulation: dict, math_result: dict) -> str:
     template = (ROOT / "assets" / "templates" / "indefinite_integral.html").read_text(encoding="utf-8")
 
-    check_summary = "Checks pending."
-    if math_result:
-        passed = [name for name, ok in math_result["checks"].items() if ok]
-        check_summary = "Validated: " + ", ".join(passed)
+    check_summary = check_summary_for(math_result)
 
     render_payload = dict(simulation)
     render_payload["render"] = {
@@ -67,17 +74,38 @@ def build_indefinite_integral_html(simulation: dict, math_result: dict | None) -
         "simulation_id": html.escape(simulation["id"]),
         "first_goal": html.escape(simulation["scenes"][0].get("goal", "")),
         "first_caption": html.escape(simulation["scenes"][0].get("caption", "")),
-        "initial_formula": simulation["scenes"][0].get("formula", simulation["math"]["integrand"]),
+        "initial_formula": html.escape(simulation["scenes"][0].get("formula", simulation["math"]["integrand"])),
         "check_summary": html.escape(check_summary),
         "simulation_json": json.dumps(render_payload, ensure_ascii=True).replace("</", "<\\/"),
     }
     return render_template(template, values)
 
 
-def load_math_result(path: Path | None) -> dict | None:
-    if not path:
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+def load_schema() -> dict:
+    schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
+    jsonschema.Draft202012Validator.check_schema(schema)
+    return schema
+
+
+def validate_or_load_math_result(simulation: dict, path: Path | None) -> dict:
+    jsonschema.validate(simulation, load_schema())
+    expected_hash = contract_hash(simulation)
+    if path:
+        math_result = json.loads(path.read_text(encoding="utf-8"))
+        if math_result.get("id") != simulation.get("id"):
+            raise ValueError("Math result id does not match simulation id.")
+        if math_result.get("type") != simulation.get("type"):
+            raise ValueError("Math result type does not match simulation type.")
+        if math_result.get("contract_hash") != expected_hash:
+            raise ValueError("Math result contract_hash is missing or stale.")
+        if not math_result.get("passed"):
+            raise ValueError("Math result did not pass validation.")
+        return math_result
+
+    math_result = validate_math(simulation)
+    if not math_result.get("passed"):
+        raise ValueError("Math validation did not pass.")
+    return math_result
 
 
 def main() -> int:
@@ -88,7 +116,7 @@ def main() -> int:
     args = parser.parse_args()
 
     simulation = json.loads(args.input.read_text(encoding="utf-8"))
-    math_result = load_math_result(args.math_result)
+    math_result = validate_or_load_math_result(simulation, args.math_result)
     if simulation.get("type") == "surface_of_revolution":
         html_output = build_surface_revolution_html(simulation, math_result)
     elif simulation.get("type") == "indefinite_integral":

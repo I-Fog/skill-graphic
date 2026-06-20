@@ -6,6 +6,7 @@
     "derivative_matches_function": true,
     "antiderivative_matches_function": true,
     "declared_points_match_function": true,
+    "declared_intervals_match_function": true,
     "declared_asymptotes_match_function": true,
     "declared_discontinuities_match_function": true
   }
