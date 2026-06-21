@@ -3,7 +3,7 @@
 ## Generic Engine
 
 - `function_graph.html` is not implemented yet.
-- There is no render-model compiler.
+- The first `function_graph` render-model compiler exists for continuous Cartesian function fixtures, but it is not yet connected to a generic HTML renderer.
 - Surface and integral demos still use template-specific rendering logic.
 - The integral visual primitive is sampled numerically in the browser demo, although the validator knows an exact primitive.
 

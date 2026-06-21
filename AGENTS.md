@@ -22,7 +22,7 @@ This repo defines a Codex skill and runtime scaffold for exact, interactive educ
 - Keep the timeline as a draggable scrubber so the user can move backward and forward with the cursor.
 - Serve generated HTML over local HTTP for browser validation:
   `python scripts/serve_dist.py`
-- Use `python scripts/pro_review_cycle.py create --copy` and `python scripts/pro_review_cycle.py ingest <round-id> --from-clipboard` for the ChatGPT Pro review loop. Round artifacts live in `docs/review/pro-rounds/`.
+- Use `python scripts/pro_review_cycle.py run --transport uia` for the repeatable ChatGPT Pro review loop through the integrated browser. If UIA cannot access ChatGPT, use `create --copy` plus `ingest <round-id> --from-clipboard`. Finish completed rounds with `python scripts/pro_review_cycle.py verify <round-id>`. Round artifacts live in `docs/review/pro-rounds/`.
 
 ## Validation
 

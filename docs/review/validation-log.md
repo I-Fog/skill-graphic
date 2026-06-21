@@ -8,7 +8,7 @@ Environment:
 - Workspace: `D:\PERSONAL\chatgpt\skills\skill_graphic`
 - Branch: `codex/skill-graphic-mvp`
 - Reviewed base commit before this change: `6f6195b`
-- Working tree during validation: dirty with the current review-fix changes
+- Working tree during validation: dirty with the current Pro-review hardening and function render-model compiler changes
 - Python: `3.14.0`
 - SymPy: `1.14.0`
 - jsonschema: `4.25.1`
@@ -17,17 +17,21 @@ Environment:
 ## Commands
 
 ```powershell
+python scripts\pro_review_cycle.py self-test
 python scripts\run_smoke_tests.py
 ```
 
 Result:
 
 ```text
+pro review cycle self-test passed
 D:\PERSONAL\chatgpt\skills\skill_graphic\dist\surface-revolution.html
 D:\PERSONAL\chatgpt\skills\skill_graphic\dist\indefinite-integral-tan-sin.html
 D:\PERSONAL\chatgpt\skills\skill_graphic\dist\_tmp-smoke-output.html
+D:\PERSONAL\chatgpt\skills\skill_graphic\dist\_tmp-smoke-output.html
 Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\surface-revolution.html
 Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\function-graph-cubic.math.json
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\function-graph-cubic.render.json
 Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\indefinite-integral-tan-sin.html
 ```
 
@@ -67,6 +71,7 @@ Created docs/review/screenshots/integral-graphic.png
   - indefinite integral.
 - Expected math check comparison where fixtures declare expected checks.
 - Recursive expected-math subset comparison for declared formula fields.
+- Function graph render-model compilation for curves, viewport, special points, intervals, tangents, and timeline.
 - HTML generation for the two current visual demos.
 - Rejection of negative fixtures:
 - inverted surface domain: `domain_is_valid`;
@@ -87,6 +92,7 @@ Created docs/review/screenshots/integral-graphic.png
 SHA256 f03ef779c353f5d52ef37e3fcfb89685948f70510752db10e4469904bb8a2047  dist/surface-revolution.html
 SHA256 84c9d48284154372e05f94e507cf00a8850bb42cc5d54327b7b181cf637bd1cd  dist/surface-revolution.math.json
 SHA256 948b672357287fc4190c2adc66f207fd336882528cef9e04569792c04a4af7a7  dist/function-graph-cubic.math.json
+SHA256 79c551698985fc9c40c3ee785c27cdec09cfcf339e050ba85cc5a060fabcf125  dist/function-graph-cubic.render.json
 SHA256 2a36dbda47a09fcd7ba4b17ebddd2433c492389c31552403cec07548d7e458f9  dist/indefinite-integral-tan-sin.html
 SHA256 7a2d49eb612b8b3e577eb47fb19c71198dadda50adbf3afdb89257e4ecba023a  dist/indefinite-integral-tan-sin.math.json
 ```

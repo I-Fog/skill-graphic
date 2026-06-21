@@ -52,16 +52,23 @@ python scripts/serve_dist.py
 When the user wants ChatGPT Pro to validate or plan the next iteration, use:
 
 ```powershell
-python scripts/pro_review_cycle.py create --copy --focus "<review focus>"
+python scripts/pro_review_cycle.py run --transport uia --focus "<review focus>"
 ```
 
-After ChatGPT Pro answers, ingest the answer with:
+If UI Automation cannot access the integrated browser, fall back to clipboard mode:
 
 ```powershell
+python scripts/pro_review_cycle.py create --copy --focus "<review focus>"
 python scripts/pro_review_cycle.py ingest <round-id> --from-clipboard
 ```
 
-The round artifacts live in `docs/review/pro-rounds/<round-id>/`. Read `docs/review/pro-review-automation.md` before changing this loop.
+Then verify the completed round:
+
+```powershell
+python scripts/pro_review_cycle.py verify <round-id>
+```
+
+The round artifacts live in `docs/review/pro-rounds/<round-id>/` and include `round.json` identity metadata. Read `docs/review/pro-review-automation.md` before changing this loop.
 
 ## Contract Boundaries
 
@@ -69,6 +76,7 @@ The round artifacts live in `docs/review/pro-rounds/<round-id>/`. Read `docs/rev
 - Put domain examples in `examples/`.
 - Put reusable rendering templates in `assets/templates/`.
 - Put math validation in `python/validator/`.
+- Put reusable render-model compilation in `python/compiler/`.
 - Put generated HTML in `dist/`.
 - Keep generated logs, screenshots, temporary traces, and rejected outputs outside references and assets.
 
@@ -82,6 +90,7 @@ The round artifacts live in `docs/review/pro-rounds/<round-id>/`. Read `docs/rev
 - Use SymPy for derivatives, integrals, parametrizations, simplifications, and model checks.
 - Use Playwright headless for final browser validation when visual correctness matters.
 - For function exercises, read `references/functions.md` and validate domain, derivative, primitive, points, asymptotes, and discontinuities before rendering.
+- For function exercises, compile validated data through `python/compiler/function_graph.py` before building a generic renderer; JavaScript should consume the render model instead of reinterpreting expressions.
 - Function scene targets are typed: extrema actions target extrema points, tangent actions require a point id, asymptote actions target asymptote entities, and discontinuity actions target discontinuity entities.
 - For integral exercises, read `references/integrals.md` and choose the smallest method that makes the transformation exact.
 

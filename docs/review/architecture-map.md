@@ -26,6 +26,13 @@ dist/*.math.json
   - includes passed checks
   - includes contract_hash
   |
+  +--> python/compiler/function_graph.py
+       - compiles validated function contracts into render models
+       - samples curves, points, intervals, tangents, viewport, and timeline
+       |
+       v
+       dist/*function-graph*.render.json
+  |
   v
 scripts/generate_simulation.py
   - validates schema
@@ -43,6 +50,7 @@ dist/*.html
 - Local instructions: `AGENTS.md`
 - Schema: `schemas/simulation.schema.json`
 - Contract semantics: `python/validator/contract.py`
+- Function render-model compiler: `python/compiler/function_graph.py`
 - Generator: `scripts/generate_simulation.py`
 - Smoke runner: `scripts/run_smoke_tests.py`
 

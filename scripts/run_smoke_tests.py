@@ -9,8 +9,10 @@ from pathlib import Path
 import jsonschema
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "python"))
 sys.path.insert(0, str(ROOT / "python" / "validator"))
 
+from compiler.function_graph import compile_function_graph_render_model  # noqa: E402
 from validate_math import validate_math  # noqa: E402
 
 SCHEMA = ROOT / "schemas" / "simulation.schema.json"
@@ -19,6 +21,7 @@ SURFACE_MATH_OUTPUT = ROOT / "dist" / "surface-revolution.math.json"
 SURFACE_HTML_OUTPUT = ROOT / "dist" / "surface-revolution.html"
 FUNCTION_EXAMPLE = ROOT / "examples" / "function-graph-cubic" / "input.json"
 FUNCTION_MATH_OUTPUT = ROOT / "dist" / "function-graph-cubic.math.json"
+FUNCTION_RENDER_OUTPUT = ROOT / "dist" / "function-graph-cubic.render.json"
 FUNCTION_EXPECTED = ROOT / "examples" / "function-graph-cubic" / "expected-math.json"
 INTEGRAL_EXAMPLE = ROOT / "examples" / "indefinite-integral-tan-sin" / "input.json"
 INTEGRAL_MATH_OUTPUT = ROOT / "dist" / "indefinite-integral-tan-sin.math.json"
@@ -165,6 +168,32 @@ def check_integral_html() -> None:
     assert "&quot;" not in html_text.split('id="simulation-data"', 1)[1].split("</script>", 1)[0]
 
 
+def check_function_render_model(example: dict, math_result: dict) -> None:
+    render_model = compile_function_graph_render_model(example, math_result)
+    FUNCTION_RENDER_OUTPUT.write_text(json.dumps(render_model, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    if render_model["type"] != "function_graph_render_model":
+        raise AssertionError("Function graph compiler returned the wrong render model type.")
+    if render_model["timeline"]["easing"] != "easeInOutCubic":
+        raise AssertionError("Function graph timeline must default to smooth easeInOutCubic.")
+    if render_model["timeline"]["duration_ms"] <= 0:
+        raise AssertionError("Function graph render model must include a non-empty timeline.")
+    curves = {curve["id"]: curve for curve in render_model["curves"]}
+    for curve_id in ("function", "derivative", "antiderivative"):
+        if curve_id not in curves:
+            raise AssertionError(f"Missing curve in render model: {curve_id}")
+        if not curves[curve_id]["segments"] or not curves[curve_id]["segments"][0]:
+            raise AssertionError(f"Curve has no drawable samples: {curve_id}")
+    points = {point["id"]: point for point in render_model["features"]["points"]}
+    for point_id in ("max-local", "min-local", "inflection-origin"):
+        if point_id not in points:
+            raise AssertionError(f"Missing special point in render model: {point_id}")
+    tangents = {item["point_id"]: item for item in render_model["features"]["tangents"]}
+    if "root-center" not in tangents:
+        raise AssertionError("Tangent scene did not compile a tangent for root-center.")
+    if render_model["viewport"]["y_min"] >= -2 or render_model["viewport"]["y_max"] <= 2:
+        raise AssertionError("Viewport does not frame the cubic extrema.")
+
+
 def assert_expected_validation_failure(example: dict, label: str) -> None:
     expected = example.get("expected_failure")
     if not expected:
@@ -268,8 +297,10 @@ def main() -> int:
     assert_expected_math(surface_result, SURFACE_EXPECTED)
     check_surface_html()
 
+    function_example = json.loads(FUNCTION_EXAMPLE.read_text(encoding="utf-8"))
     function_result = validate_checked(FUNCTION_EXAMPLE, FUNCTION_MATH_OUTPUT, schema)
     assert_expected_math(function_result, FUNCTION_EXPECTED)
+    check_function_render_model(function_example, function_result)
 
     integral_result = generate_checked(INTEGRAL_EXAMPLE, INTEGRAL_MATH_OUTPUT, INTEGRAL_HTML_OUTPUT, schema)
     assert_expected_math(integral_result, INTEGRAL_EXPECTED)
@@ -279,6 +310,7 @@ def main() -> int:
 
     print(f"Smoke tests passed: {SURFACE_HTML_OUTPUT}")
     print(f"Smoke tests passed: {FUNCTION_MATH_OUTPUT}")
+    print(f"Smoke tests passed: {FUNCTION_RENDER_OUTPUT}")
     print(f"Smoke tests passed: {INTEGRAL_HTML_OUTPUT}")
     return 0
 
