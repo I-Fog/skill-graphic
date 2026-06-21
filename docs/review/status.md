@@ -14,6 +14,7 @@ Last updated: 2026-06-21
 | Generator | Improved | `scripts/generate_simulation.py` | Always reruns validation and rejects stale, failed, or mismatched external math results. |
 | Smoke tests | Improved | `scripts/run_smoke_tests.py` | Includes positive fixtures, recursive expected-math checks, and expected negative failure metadata. |
 | Browser validation | Local only | `docs/review/screenshots/*.png` | Screenshots are static evidence; no CI browser run yet. |
+| ChatGPT Pro review loop | Scaffolded | `scripts/pro_review_cycle.py`, `docs/review/pro-review-automation.md` | Prompt/response/backlog artifacts are automated; browser transport currently falls back to clipboard. |
 
 ## Current Risk Level
 

@@ -47,6 +47,22 @@ python scripts/serve_dist.py
 
 10. Return the local URL or absolute HTML path and mention the validation command used.
 
+## External Review Loop
+
+When the user wants ChatGPT Pro to validate or plan the next iteration, use:
+
+```powershell
+python scripts/pro_review_cycle.py create --copy --focus "<review focus>"
+```
+
+After ChatGPT Pro answers, ingest the answer with:
+
+```powershell
+python scripts/pro_review_cycle.py ingest <round-id> --from-clipboard
+```
+
+The round artifacts live in `docs/review/pro-rounds/<round-id>/`. Read `docs/review/pro-review-automation.md` before changing this loop.
+
 ## Contract Boundaries
 
 - Put durable simulation fields in `schemas/simulation.schema.json`.

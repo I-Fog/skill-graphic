@@ -41,6 +41,8 @@ Use these files when you cannot execute tests:
 - `docs/review/screenshots/surface-revolution.png`
 - `docs/review/screenshots/integral-graphic.png`
 - `examples/negative/*/input.json`
+- `docs/review/pro-review-automation.md`
+- `docs/review/pro-rounds/*/prompt.md`, `response.md`, and `backlog.md` when an external Pro review round exists
 
 ## Main Reviewer Question
 
