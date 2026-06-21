@@ -30,6 +30,10 @@ NEGATIVE_FIXTURES = [
     ROOT / "examples" / "negative" / "function-false-extremum" / "input.json",
     ROOT / "examples" / "negative" / "function-false-inflection" / "input.json",
     ROOT / "examples" / "negative" / "function-omitted-asymptote" / "input.json",
+    ROOT / "examples" / "negative" / "function-tangent-missing-point" / "input.json",
+    ROOT / "examples" / "negative" / "function-extrema-target-wrong-kind" / "input.json",
+    ROOT / "examples" / "negative" / "function-duplicate-feature-id" / "input.json",
+    ROOT / "examples" / "negative" / "function-asymptote-missing-target" / "input.json",
 ]
 TMP_OUTPUT = ROOT / "dist" / "_tmp-smoke-output.html"
 TMP_MATH_OUTPUT = ROOT / "dist" / "_tmp-stale-math.json"
@@ -68,12 +72,24 @@ def generate_checked(example_path: Path, math_output: Path, html_output: Path, s
 
 def assert_expected_math(math_result: dict, expected_path: Path) -> None:
     expected = json.loads(expected_path.read_text(encoding="utf-8"))
-    if "passed" in expected and math_result.get("passed") != expected.get("passed"):
-        raise AssertionError(f"{expected_path} expected passed={expected.get('passed')}.")
-    for name, expected_value in expected.get("checks", {}).items():
-        actual = math_result.get("checks", {}).get(name)
-        if actual != expected_value:
-            raise AssertionError(f"{expected_path} expected {name}={expected_value}, got {actual}.")
+    assert_subset(math_result, expected, expected_path.as_posix())
+
+
+def assert_subset(actual: object, expected: object, label: str) -> None:
+    if isinstance(expected, dict):
+        if not isinstance(actual, dict):
+            raise AssertionError(f"{label} expected object, got {type(actual).__name__}.")
+        for key, expected_value in expected.items():
+            if key not in actual:
+                raise AssertionError(f"{label} missing key {key!r}.")
+            assert_subset(actual[key], expected_value, f"{label}.{key}")
+        return
+    if isinstance(expected, list):
+        if actual != expected:
+            raise AssertionError(f"{label} expected {expected!r}, got {actual!r}.")
+        return
+    if actual != expected:
+        raise AssertionError(f"{label} expected {expected!r}, got {actual!r}.")
 
 
 def validate_checked(example_path: Path, math_output: Path, schema: dict) -> dict:
@@ -149,20 +165,45 @@ def check_integral_html() -> None:
     assert "&quot;" not in html_text.split('id="simulation-data"', 1)[1].split("</script>", 1)[0]
 
 
-def assert_validation_fails(example: dict, label: str) -> None:
-    try:
-        result = validate_math(example)
-    except Exception:
+def assert_expected_validation_failure(example: dict, label: str) -> None:
+    expected = example.get("expected_failure")
+    if not expected:
+        raise AssertionError(f"Negative fixture is missing expected_failure metadata: {label}")
+
+    phase = expected["phase"]
+    if phase == "math":
+        try:
+            result = validate_math(example)
+        except Exception as exc:
+            raise AssertionError(f"{label} expected math check failure, got exception: {exc}") from exc
+        check_name = expected.get("check")
+        if not check_name:
+            raise AssertionError(f"{label} expected math failure must name a check.")
+        if result.get("checks", {}).get(check_name) is not False:
+            raise AssertionError(f"{label} expected {check_name}=False, got {result.get('checks', {}).get(check_name)!r}.")
+        if result.get("passed"):
+            raise AssertionError(f"{label} expected validation to fail.")
         return
-    if result.get("passed"):
-        raise AssertionError(f"Negative validation unexpectedly passed: {label}")
+
+    if phase == "contract":
+        try:
+            validate_math(example)
+        except Exception as exc:
+            message = str(exc)
+            expected_text = expected.get("message_contains")
+            if expected_text and expected_text not in message:
+                raise AssertionError(f"{label} expected error containing {expected_text!r}, got {message!r}.") from exc
+            return
+        raise AssertionError(f"{label} expected contract validation to raise.")
+
+    raise AssertionError(f"{label} unsupported expected_failure phase for smoke test: {phase}")
 
 
 def check_negative_validation_cases(schema: dict) -> None:
     for fixture_path in NEGATIVE_FIXTURES:
         fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
         jsonschema.validate(fixture, schema)
-        assert_validation_fails(fixture, fixture_path.as_posix())
+        assert_expected_validation_failure(fixture, fixture_path.as_posix())
 
 
 def check_generator_validation_gate() -> None:
@@ -199,6 +240,24 @@ def check_generator_validation_gate() -> None:
     TMP_OUTPUT.unlink(missing_ok=True)
     if failed.returncode == 0:
         raise AssertionError("Generator accepted a stale math result.")
+
+    forged_result = deepcopy(json.loads(SURFACE_MATH_OUTPUT.read_text(encoding="utf-8")))
+    forged_result["checks"] = {}
+    forged_result["surface_parametrization"] = {"x": "0", "y": "0", "z": "0"}
+    TMP_MATH_OUTPUT.write_text(json.dumps(forged_result), encoding="utf-8")
+    run([
+        sys.executable,
+        "scripts/generate_simulation.py",
+        str(SURFACE_EXAMPLE),
+        str(TMP_OUTPUT),
+        "--math-result",
+        str(TMP_MATH_OUTPUT),
+    ])
+    generated = TMP_OUTPUT.read_text(encoding="utf-8")
+    TMP_MATH_OUTPUT.unlink(missing_ok=True)
+    TMP_OUTPUT.unlink(missing_ok=True)
+    if "domain_is_valid" not in generated or "surface_parametrization_matches_axis" not in generated:
+        raise AssertionError("Generator used forged math_result contents instead of live validation.")
 
 
 def main() -> int:

@@ -22,8 +22,9 @@ Implemented:
 - Surface of revolution demo for `y = x sqrt(x/a)`.
 - Graphical integral demo for `int tan(x)/(2 sen(x)+6) dx`.
 - Reusable `function_graph` contract and validator.
-- Validation gate with `contract_hash`.
-- Static negative fixtures for known false-green cases.
+- Validation gate with `contract_hash` plus live revalidation before rendering.
+- Typed feature targets for function scenes.
+- Static negative fixtures with expected failure metadata for known false-green cases.
 
 Not implemented yet:
 

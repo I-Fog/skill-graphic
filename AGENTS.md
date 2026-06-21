@@ -7,6 +7,9 @@ This repo defines a Codex skill and runtime scaffold for exact, interactive educ
 - Treat `schemas/simulation.schema.json` as the source contract for simulations.
 - Keep math validation separate from rendering. Renderers must draw from validated definitions, not invent geometry.
 - Treat `scripts/generate_simulation.py` as a validation gate. It must reject stale `math_result` files whose `contract_hash` does not match the input JSON.
+- The generator must always rerun `validate_math`; a provided `math_result` is only an untrusted cache candidate.
+- Function features use typed ids. Scene targets must be compatible with the action (`show_extrema` -> extremum points, `show_asymptote` -> asymptote entities, etc.).
+- Negative fixtures must include `expected_failure` so smoke tests verify the intended phase/check/message instead of accepting any exception.
 - Scene actions that affect specific objects should use explicit `targets` or `args`.
 - Use `examples/surface-revolution/input.json` as the canonical first fixture.
 - Use `references/functions.md` and `examples/function-graph-cubic/input.json` when changing the reusable function graph contract.

@@ -1,21 +1,20 @@
 {
-  "id": "negative-function-false-extremum",
+  "id": "negative-function-extrema-target-wrong-kind",
   "type": "function_graph",
-  "title": "Negative fixture: x^3 false extremum",
+  "title": "Negative fixture: extrema action targets a root",
   "language": "es",
   "parameters": {},
   "math": {
-    "function": "x**3",
+    "function": "x**2",
     "variable": "x",
     "domain": ["-2", "2"],
-    "derivative": "3*x**2",
-    "antiderivative": "x**4/4"
+    "derivative": "2*x"
   },
   "features": {
     "special_points": [
       {
-        "id": "false-extremum",
-        "kind": "extremum",
+        "id": "root-origin",
+        "kind": "root",
         "x": "0",
         "y": "0"
       }
@@ -34,24 +33,23 @@
       "action": "draw_function_graph"
     },
     {
-      "id": "extremum",
+      "id": "extrema",
       "goal": "Fixture negativo.",
       "action": "show_extrema",
-      "targets": ["false-extremum"]
+      "targets": ["root-origin"]
     }
   ],
   "checks": [
     "function_expression_is_valid",
     "visual_domain_is_ordered",
     "derivative_matches_function",
-    "antiderivative_matches_function",
     "declared_points_match_function",
     "declared_intervals_match_function",
     "declared_asymptotes_match_function",
     "declared_discontinuities_match_function"
   ],
   "expected_failure": {
-    "phase": "math",
-    "check": "declared_points_match_function"
+    "phase": "contract",
+    "message_contains": "incompatible targets"
   }
 }

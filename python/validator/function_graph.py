@@ -140,12 +140,15 @@ def _asymptotes_match(
 ) -> bool:
     numerator, denominator = sp.fraction(sp.cancel(function))
     del numerator
-    declared = {stringify(sp.sympify(raw, locals=locals_map)) for raw in features.get("vertical_asymptotes", [])}
+    declared = {
+        stringify(sp.sympify(item["x"], locals=locals_map))
+        for item in features.get("vertical_asymptotes", [])
+    }
     denominator_roots = _real_roots_in_interval(denominator, x, domain_start, domain_end)
     if not denominator_roots.issubset(declared):
         return False
-    for raw in features.get("vertical_asymptotes", []):
-        value = sp.sympify(raw, locals=locals_map)
+    for item in features.get("vertical_asymptotes", []):
+        value = sp.sympify(item["x"], locals=locals_map)
         denominator_zero = _is_zero(denominator.subs(x, value))
         left_limit = sp.limit(function, x, value, dir="-")
         right_limit = sp.limit(function, x, value, dir="+")
@@ -166,12 +169,18 @@ def _discontinuities_match(
     numerator, denominator = sp.fraction(function)
     del numerator
     singular_roots = _real_roots_in_interval(denominator, x, domain_start, domain_end)
-    declared = {stringify(sp.sympify(raw, locals=locals_map)) for raw in features.get("discontinuities", [])}
-    asymptotes = {stringify(sp.sympify(raw, locals=locals_map)) for raw in features.get("vertical_asymptotes", [])}
+    declared = {
+        stringify(sp.sympify(item["x"], locals=locals_map))
+        for item in features.get("discontinuities", [])
+    }
+    asymptotes = {
+        stringify(sp.sympify(item["x"], locals=locals_map))
+        for item in features.get("vertical_asymptotes", [])
+    }
     if not singular_roots.issubset(declared | asymptotes):
         return False
-    for raw in features.get("discontinuities", []):
-        value = sp.sympify(raw, locals=locals_map)
+    for item in features.get("discontinuities", []):
+        value = sp.sympify(item["x"], locals=locals_map)
         direct = function.subs(x, value)
         if direct.is_finite is True and _is_finite_number(direct):
             return False

@@ -17,7 +17,7 @@ Canonical flow:
 request -> simulation JSON -> schema validation -> math/domain validation -> HTML generation -> browser/visual check
 ```
 
-`scripts/generate_simulation.py` is a validation gate, not a blind renderer. It must reject stale, failed, mismatched, or missing math validation using the simulation `contract_hash`.
+`scripts/generate_simulation.py` is a validation gate, not a blind renderer. It must reject stale, failed, mismatched, or missing math validation using the simulation `contract_hash`, and it must rerun `validate_math` even when a `math_result` file is provided.
 
 ## Fast Path
 
@@ -66,6 +66,7 @@ python scripts/serve_dist.py
 - Use SymPy for derivatives, integrals, parametrizations, simplifications, and model checks.
 - Use Playwright headless for final browser validation when visual correctness matters.
 - For function exercises, read `references/functions.md` and validate domain, derivative, primitive, points, asymptotes, and discontinuities before rendering.
+- Function scene targets are typed: extrema actions target extrema points, tangent actions require a point id, asymptote actions target asymptote entities, and discontinuity actions target discontinuity entities.
 - For integral exercises, read `references/integrals.md` and choose the smallest method that makes the transformation exact.
 
 ## Scene Design
@@ -116,7 +117,7 @@ A simulation is not done until:
 - the JSON validates against the schema;
 - the relevant math checks pass;
 - required checks for the simulation type and scene actions are present;
-- any math result used by the generator matches the current contract hash;
+- any math result handed to the generator matches the current contract hash and live validation still passes;
 - generated HTML opens as a single interactive page;
 - controls support play, pause, replay, previous, next, speed, and a draggable timeline scrubber when practical;
 - formulas and labels refer to visible objects;

@@ -10,7 +10,9 @@ schemas/simulation.schema.json
 python/validator/contract.py
   - allowed actions by type
   - required checks by type and scene action
-  - slider and target references
+  - slider references
+  - unique scene/feature ids
+  - action-compatible typed targets
   |
   v
 python/validator/validate_math.py
@@ -27,7 +29,8 @@ dist/*.math.json
   v
 scripts/generate_simulation.py
   - validates schema
-  - reruns or verifies math result
+  - reruns math validation
+  - treats external math result as untrusted cache metadata
   - rejects stale contract_hash
   |
   v
@@ -55,6 +58,10 @@ dist/*.html
 - `examples/negative/function-false-extremum/input.json`
 - `examples/negative/function-false-inflection/input.json`
 - `examples/negative/function-omitted-asymptote/input.json`
+- `examples/negative/function-tangent-missing-point/input.json`
+- `examples/negative/function-extrema-target-wrong-kind/input.json`
+- `examples/negative/function-duplicate-feature-id/input.json`
+- `examples/negative/function-asymptote-missing-target/input.json`
 
 ## Visual Evidence
 

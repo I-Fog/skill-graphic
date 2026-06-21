@@ -25,11 +25,6 @@
       "id": "curve",
       "goal": "Fixture negativo.",
       "action": "draw_function_graph"
-    },
-    {
-      "id": "asymptote",
-      "goal": "Fixture negativo.",
-      "action": "show_asymptote"
     }
   ],
   "checks": [
@@ -41,5 +36,9 @@
     "declared_intervals_match_function",
     "declared_asymptotes_match_function",
     "declared_discontinuities_match_function"
-  ]
+  ],
+  "expected_failure": {
+    "phase": "math",
+    "check": "declared_asymptotes_match_function"
+  }
 }

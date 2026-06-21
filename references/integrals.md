@@ -18,6 +18,7 @@ Required math fields:
 - `partial_fractions`: partial fraction decomposition when needed.
 - `antiderivative_t`: primitive in the substituted variable when used.
 - `antiderivative`: final expression in the original variable.
+- `antiderivative_check`: SymPy-compatible expression in the original variable used as the source of truth for derivative validation. `antiderivative` is display text and may include typographic notation such as `| |` or `+ C`.
 
 ## Method Choice
 
@@ -62,7 +63,7 @@ Do not render an integral simulation until the symbolic checks pass:
 - substitution identities are internally valid;
 - transformed integrand matches the substitution;
 - partial fractions match the transformed integrand;
-- derivative of the primitive matches the integrand, directly or through the substituted variable.
+- derivative of `antiderivative_check` matches the integrand, directly or through the substituted variable.
 - selected visual domain avoids singularities of the integrand.
 
 ## Rendering

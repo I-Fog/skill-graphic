@@ -1,26 +1,31 @@
 {
-  "id": "negative-function-false-extremum",
+  "id": "negative-function-duplicate-feature-id",
   "type": "function_graph",
-  "title": "Negative fixture: x^3 false extremum",
+  "title": "Negative fixture: duplicate feature id",
   "language": "es",
   "parameters": {},
   "math": {
-    "function": "x**3",
+    "function": "x**2",
     "variable": "x",
-    "domain": ["-2", "2"],
-    "derivative": "3*x**2",
-    "antiderivative": "x**4/4"
+    "domain": ["-2", "2"]
   },
   "features": {
     "special_points": [
       {
-        "id": "false-extremum",
-        "kind": "extremum",
+        "id": "origin",
+        "kind": "root",
         "x": "0",
         "y": "0"
       }
     ],
-    "highlighted_intervals": [],
+    "highlighted_intervals": [
+      {
+        "id": "origin",
+        "start": "-1",
+        "end": "1",
+        "kind": "positive"
+      }
+    ],
     "vertical_asymptotes": [],
     "discontinuities": []
   },
@@ -32,26 +37,18 @@
       "id": "curve",
       "goal": "Fixture negativo.",
       "action": "draw_function_graph"
-    },
-    {
-      "id": "extremum",
-      "goal": "Fixture negativo.",
-      "action": "show_extrema",
-      "targets": ["false-extremum"]
     }
   ],
   "checks": [
     "function_expression_is_valid",
     "visual_domain_is_ordered",
-    "derivative_matches_function",
-    "antiderivative_matches_function",
     "declared_points_match_function",
     "declared_intervals_match_function",
     "declared_asymptotes_match_function",
     "declared_discontinuities_match_function"
   ],
   "expected_failure": {
-    "phase": "math",
-    "check": "declared_points_match_function"
+    "phase": "contract",
+    "message_contains": "Duplicate id"
   }
 }

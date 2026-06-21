@@ -22,10 +22,19 @@ Optional `features`:
 
 - `special_points`: roots, intersections, extrema, inflection points, or custom highlighted points.
 - `highlighted_intervals`: intervals for increasing/decreasing, sign, area, or custom emphasis.
-- `vertical_asymptotes`: declared vertical asymptote x-values.
-- `discontinuities`: declared removable or jump discontinuity x-values.
+- `vertical_asymptotes`: typed entities `{id, kind: "vertical", x, label?}`.
+- `discontinuities`: typed entities `{id, kind, x, label?}`, where `kind` is `removable`, `jump`, `essential`, or `custom`.
 
-Scene actions that affect a concrete feature should identify it with `targets` or `args`. For example, `show_tangent` should provide `args.point_id` or target a point id.
+Scene actions that affect a concrete feature must identify it with compatible `targets` or `args`:
+
+- `show_tangent` requires `args.point_id` that refers to a `special_points` id.
+- `show_extrema` targets only points with `kind: "extremum"`.
+- `show_inflection` targets only points with `kind: "inflection"`.
+- `show_asymptote` targets only `vertical_asymptotes` ids.
+- `show_discontinuity` targets only `discontinuities` ids.
+- `highlight_interval` targets only `highlighted_intervals` ids.
+
+Ids must be unique across scenes and feature collections.
 
 ## Scene Pattern
 

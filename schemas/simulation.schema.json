@@ -200,18 +200,52 @@
         "vertical_asymptotes": {
           "type": "array",
           "items": {
-            "type": "string",
-            "minLength": 1
-          },
-          "uniqueItems": true
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "x"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "kind": {
+                "type": "string",
+                "const": "vertical"
+              },
+              "x": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string"
+              }
+            }
+          }
         },
         "discontinuities": {
           "type": "array",
           "items": {
-            "type": "string",
-            "minLength": 1
-          },
-          "uniqueItems": true
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "x"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "kind": {
+                "type": "string",
+                "enum": ["removable", "jump", "essential", "custom"]
+              },
+              "x": {
+                "type": "string",
+                "minLength": 1
+              },
+              "label": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     },
@@ -284,8 +318,25 @@
           },
           "args": {
             "type": "object",
-            "additionalProperties": {
-              "type": ["string", "number", "boolean", "array", "object"]
+            "additionalProperties": false,
+            "properties": {
+              "point_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "x": {
+                "type": ["string", "number"]
+              },
+              "start": {
+                "type": ["string", "number"]
+              },
+              "end": {
+                "type": ["string", "number"]
+              },
+              "direction": {
+                "type": "string",
+                "enum": ["left", "right", "up", "down", "clockwise", "counterclockwise"]
+              }
             }
           }
         }
@@ -318,6 +369,25 @@
         ]
       },
       "uniqueItems": true
+    },
+    "expected_failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["phase"],
+      "properties": {
+        "phase": {
+          "type": "string",
+          "enum": ["schema", "contract", "math", "generator"]
+        },
+        "check": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message_contains": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     }
   },
   "allOf": [

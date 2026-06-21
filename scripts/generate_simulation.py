@@ -91,16 +91,15 @@ def validate_or_load_math_result(simulation: dict, path: Path | None) -> dict:
     jsonschema.validate(simulation, load_schema())
     expected_hash = contract_hash(simulation)
     if path:
-        math_result = json.loads(path.read_text(encoding="utf-8"))
-        if math_result.get("id") != simulation.get("id"):
+        cached_result = json.loads(path.read_text(encoding="utf-8"))
+        if cached_result.get("id") != simulation.get("id"):
             raise ValueError("Math result id does not match simulation id.")
-        if math_result.get("type") != simulation.get("type"):
+        if cached_result.get("type") != simulation.get("type"):
             raise ValueError("Math result type does not match simulation type.")
-        if math_result.get("contract_hash") != expected_hash:
+        if cached_result.get("contract_hash") != expected_hash:
             raise ValueError("Math result contract_hash is missing or stale.")
-        if not math_result.get("passed"):
+        if not cached_result.get("passed"):
             raise ValueError("Math result did not pass validation.")
-        return math_result
 
     math_result = validate_math(simulation)
     if not math_result.get("passed"):

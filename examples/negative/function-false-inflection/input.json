@@ -49,5 +49,9 @@
     "declared_intervals_match_function",
     "declared_asymptotes_match_function",
     "declared_discontinuities_match_function"
-  ]
+  ],
+  "expected_failure": {
+    "phase": "math",
+    "check": "declared_points_match_function"
+  }
 }

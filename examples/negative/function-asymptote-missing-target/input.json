@@ -1,27 +1,25 @@
 {
-  "id": "negative-function-false-extremum",
+  "id": "negative-function-asymptote-missing-target",
   "type": "function_graph",
-  "title": "Negative fixture: x^3 false extremum",
+  "title": "Negative fixture: asymptote action without target",
   "language": "es",
   "parameters": {},
   "math": {
-    "function": "x**3",
+    "function": "1/x",
     "variable": "x",
     "domain": ["-2", "2"],
-    "derivative": "3*x**2",
-    "antiderivative": "x**4/4"
+    "derivative": "-1/x**2"
   },
   "features": {
-    "special_points": [
+    "special_points": [],
+    "highlighted_intervals": [],
+    "vertical_asymptotes": [
       {
-        "id": "false-extremum",
-        "kind": "extremum",
-        "x": "0",
-        "y": "0"
+        "id": "asymptote-zero",
+        "kind": "vertical",
+        "x": "0"
       }
     ],
-    "highlighted_intervals": [],
-    "vertical_asymptotes": [],
     "discontinuities": []
   },
   "controls": {
@@ -34,24 +32,22 @@
       "action": "draw_function_graph"
     },
     {
-      "id": "extremum",
+      "id": "asymptote",
       "goal": "Fixture negativo.",
-      "action": "show_extrema",
-      "targets": ["false-extremum"]
+      "action": "show_asymptote"
     }
   ],
   "checks": [
     "function_expression_is_valid",
     "visual_domain_is_ordered",
     "derivative_matches_function",
-    "antiderivative_matches_function",
     "declared_points_match_function",
     "declared_intervals_match_function",
     "declared_asymptotes_match_function",
     "declared_discontinuities_match_function"
   ],
   "expected_failure": {
-    "phase": "math",
-    "check": "declared_points_match_function"
+    "phase": "contract",
+    "message_contains": "requires asymptote targets"
   }
 }

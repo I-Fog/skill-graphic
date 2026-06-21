@@ -46,5 +46,9 @@
     "derivative_exists_on_interval",
     "surface_parametrization_matches_axis",
     "area_formula_matches_surface_of_revolution"
-  ]
+  ],
+  "expected_failure": {
+    "phase": "math",
+    "check": "domain_is_valid"
+  }
 }

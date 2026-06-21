@@ -99,6 +99,98 @@ def allowed_actions_for(simulation_type: str) -> set[str]:
     return set()
 
 
+def _register_id(registry: dict[str, str], item_id: str, owner: str) -> None:
+    previous = registry.get(item_id)
+    if previous:
+        raise ValueError(f"Duplicate id {item_id!r} used by {previous} and {owner}.")
+    registry[item_id] = owner
+
+
+def _feature_maps(simulation: dict[str, Any]) -> dict[str, dict[str, dict[str, Any]]]:
+    features = simulation.get("features", {})
+    return {
+        "points": {item["id"]: item for item in features.get("special_points", [])},
+        "intervals": {item["id"]: item for item in features.get("highlighted_intervals", [])},
+        "asymptotes": {item["id"]: item for item in features.get("vertical_asymptotes", [])},
+        "discontinuities": {item["id"]: item for item in features.get("discontinuities", [])},
+    }
+
+
+def _validate_unique_ids(simulation: dict[str, Any]) -> None:
+    registry: dict[str, str] = {}
+    for scene in simulation.get("scenes", []):
+        _register_id(registry, scene["id"], f"scene:{scene['action']}")
+
+    features = simulation.get("features", {})
+    for collection in (
+        "special_points",
+        "highlighted_intervals",
+        "vertical_asymptotes",
+        "discontinuities",
+    ):
+        for item in features.get(collection, []):
+            _register_id(registry, item["id"], f"features.{collection}")
+
+
+def _require_targets(scene: dict[str, Any], allowed_ids: set[str], label: str) -> None:
+    targets = set(scene.get("targets", []))
+    if not targets:
+        raise ValueError(f"Scene {scene['id']} action {scene['action']} requires {label} targets.")
+    wrong = targets - allowed_ids
+    if wrong:
+        raise ValueError(
+            f"Scene {scene['id']} action {scene['action']} has incompatible targets: {sorted(wrong)}"
+        )
+
+
+def _validate_scene_targets(simulation: dict[str, Any]) -> None:
+    simulation_type = simulation.get("type", "")
+    maps = _feature_maps(simulation)
+    all_target_ids = set().union(*(collection.keys() for collection in maps.values()))
+
+    for scene in simulation.get("scenes", []):
+        unknown_targets = set(scene.get("targets", [])) - all_target_ids
+        if unknown_targets:
+            raise ValueError(
+                f"Scene {scene['id']} references unknown targets: {sorted(unknown_targets)}"
+            )
+
+        point_id = scene.get("args", {}).get("point_id")
+        if point_id and point_id not in maps["points"]:
+            raise ValueError(f"Scene {scene['id']} references unknown point_id: {point_id}")
+
+        action = scene["action"]
+        point_ids = set(maps["points"].keys())
+        interval_ids = set(maps["intervals"].keys())
+        asymptote_ids = set(maps["asymptotes"].keys())
+        discontinuity_ids = set(maps["discontinuities"].keys())
+        extrema_ids = {
+            item_id for item_id, item in maps["points"].items() if item.get("kind") == "extremum"
+        }
+        inflection_ids = {
+            item_id for item_id, item in maps["points"].items() if item.get("kind") == "inflection"
+        }
+
+        if action == "highlight_interval" and simulation_type == "function_graph":
+            _require_targets(scene, interval_ids, "interval")
+        elif action == "trace_point":
+            if scene.get("targets"):
+                _require_targets(scene, point_ids, "point")
+        elif action == "show_tangent":
+            if not point_id:
+                raise ValueError(f"Scene {scene['id']} action show_tangent requires args.point_id.")
+            if scene.get("targets"):
+                _require_targets(scene, point_ids, "point")
+        elif action == "show_extrema":
+            _require_targets(scene, extrema_ids, "extremum point")
+        elif action == "show_inflection":
+            _require_targets(scene, inflection_ids, "inflection point")
+        elif action == "show_asymptote":
+            _require_targets(scene, asymptote_ids, "asymptote")
+        elif action == "show_discontinuity":
+            _require_targets(scene, discontinuity_ids, "discontinuity")
+
+
 def validate_contract_semantics(simulation: dict[str, Any]) -> None:
     simulation_type = simulation.get("type", "")
     actions = scene_actions(simulation)
@@ -116,19 +208,5 @@ def validate_contract_semantics(simulation: dict[str, Any]) -> None:
     if unknown_sliders:
         raise ValueError(f"Parameter sliders reference unknown parameters: {sorted(unknown_sliders)}")
 
-    features = simulation.get("features", {})
-    target_ids = {
-        item["id"]
-        for collection in ("special_points", "highlighted_intervals")
-        for item in features.get(collection, [])
-    }
-    if target_ids:
-        for scene in simulation.get("scenes", []):
-            unknown_targets = set(scene.get("targets", [])) - target_ids
-            if unknown_targets:
-                raise ValueError(
-                    f"Scene {scene['id']} references unknown targets: {sorted(unknown_targets)}"
-                )
-            point_id = scene.get("args", {}).get("point_id")
-            if point_id and point_id not in target_ids:
-                raise ValueError(f"Scene {scene['id']} references unknown point_id: {point_id}")
+    _validate_unique_ids(simulation)
+    _validate_scene_targets(simulation)

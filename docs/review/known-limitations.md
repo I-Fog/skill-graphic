@@ -10,8 +10,9 @@
 ## Contract
 
 - The schema is not yet split into `$defs` and `oneOf`.
-- Scene `args` are accepted structurally but not fully action-typed.
+- Scene `args` are narrowed and targets are typed semantically, but JSON Schema does not yet encode every action-specific shape with `oneOf`.
 - Checks are enforced semantically in `python/validator/contract.py`, not directly by JSON Schema.
+- Display formulas such as `scene.formula` and integral `antiderivative` are pedagogical text; `antiderivative_check` is the expression validated by SymPy until the contract moves to `{expression, display_tex}` pairs.
 
 ## Validation
 
