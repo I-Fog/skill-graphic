@@ -16,10 +16,22 @@ The transport layer can be UI Automation against the integrated browser, manual 
 For project-agnostic supervision, use the global skill:
 
 ```powershell
-python C:\Users\casti\.codex\skills\codex-pro-supervisor\scripts\supervise.py run --transport uia --scope function-renderer --focus "Revisa el scope actual y dime si queda algun P0."
+codex-supervise run --transport uia --scope function-renderer --focus "Revisa el scope actual y dime si queda algun P0."
 ```
 
 The global route stores rounds in `.codex-supervision/pro-rounds/` and reads this repo's `codex-supervision.json` scope map. The local `scripts/pro_review_cycle.py` remains as the repo-specific compatibility route.
+
+If a terminal has not reloaded PATH yet, call the launcher directly:
+
+```powershell
+& "$env:USERPROFILE\.codex\bin\codex-supervise.cmd" run --transport uia --scope function-renderer --focus "Revisa el scope actual y dime si queda algun P0."
+```
+
+To supervise a repo while the shell is somewhere else, pass the root for that command:
+
+```powershell
+codex-supervise pack --root "D:\PERSONAL\chatgpt\skills\skill_graphic" --scope function-renderer
+```
 
 ## Commands
 
@@ -56,7 +68,7 @@ Create a review round without sending it:
 python scripts/pro_review_cycle.py create --scope function-renderer --copy --focus "Revisa los cambios recientes y dime el siguiente P0."
 ```
 
-This writes:
+The local compatibility route writes:
 
 - `docs/review/pro-rounds/<round-id>/prompt.md`
 - `docs/review/pro-rounds/<round-id>/response.md`
@@ -106,6 +118,11 @@ python scripts/pro_review_cycle.py create --dry-run
 
 ## Round Artifacts
 
+| Route | Command family | Round directory |
+| --- | --- | --- |
+| Global supervisor | `codex-supervise ...` | `.codex-supervision/pro-rounds/<round-id>/` |
+| Local compatibility | `python scripts/pro_review_cycle.py ...` | `docs/review/pro-rounds/<round-id>/` |
+
 - `prompt.md`: compact scoped packet by default. Full packets include Git state, review docs, limitations, architecture map, validation log, checklist, and the broader dirty diff.
 - `response.md`: raw ChatGPT Pro answer.
 - `backlog.md`: extracted `P0`, `P1`, `P2`, plan, and tests from the response.
@@ -114,7 +131,7 @@ python scripts/pro_review_cycle.py create --dry-run
 - `packet/files/`: exact copies of the files whose content was sent in the packet.
 - `packet/scoped.diff` or `packet/dirty.patch`: the diff text used by the packet.
 
-Keep these under `docs/review/pro-rounds/` because they are review evidence, not reusable skill references. Rounds are local by default and ignored by Git because they may contain transient external responses; commit a completed round only if it is intentionally needed as public review evidence.
+Keep round artifacts out of reusable skill references. Global rounds are ignored through `.codex-supervision/`; local compatibility rounds should remain review evidence and should only be committed when intentionally needed as public evidence.
 
 ## Browser Adapter Boundary
 

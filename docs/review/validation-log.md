@@ -261,3 +261,72 @@ local pro_review_cycle self-test: OK
 skill_graphic smoke tests: OK
 skill_graphic quick_validate: Skill is valid!
 ```
+
+## Additional Validation After Global Supervisor Portability Update
+
+Date: 2026-06-22
+
+External Pro review round:
+
+```text
+.codex-supervision/pro-rounds/pro-portability-02
+```
+
+Pro dictamen: `cambios solicitados`. P0 finding: documentation used `CODEX_SUPERVISE_ROOT` as if it were scoped to one PowerShell command, but the variable persists in the session and could route later rounds to the wrong project. Implemented explicit `--root <path>` support in the global supervisor and changed docs to prefer `--root`. `CODEX_SUPERVISE_ROOT` remains documented as lower-priority fallback with persistence warning.
+
+Commands:
+
+```powershell
+python -m py_compile C:\Users\casti\.codex\skills\codex-pro-supervisor\scripts\supervise.py
+C:\Users\casti\.codex\bin\codex-supervise.cmd self-test
+python C:\Users\casti\.codex\skills\.system\skill-creator\scripts\quick_validate.py C:\Users\casti\.codex\skills\codex-pro-supervisor
+python C:\Users\casti\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
+python scripts\run_smoke_tests.py
+```
+
+Targeted portability checks:
+
+```text
+two consecutive roots: OK
+non-git --root with --scope .: OK
+directory binary omitted: OK
+explicit binary blocked: OK
+invalid root blocked: OK
+current-work outside git blocked: OK
+```
+
+Notes:
+
+- `codex-supervise.cmd` and `codex-supervise.ps1` live in `$env:USERPROFILE\.codex\bin`.
+- `$env:USERPROFILE\.codex\bin` was added to the user PATH; existing shells may still need the absolute fallback until they reload environment variables.
+- Global rounds are stored in `.codex-supervision/pro-rounds/`; the local `scripts/pro_review_cycle.py` route remains compatibility-only and stores under `docs/review/pro-rounds/`.
+
+Follow-up Pro rounds:
+
+```text
+C:\Users\casti\.codex\.codex-supervision\pro-rounds\pro-portability-03
+C:\Users\casti\.codex\.codex-supervision\pro-rounds\pro-portability-04
+C:\Users\casti\.codex\.codex-supervision\pro-rounds\pro-portability-05
+```
+
+Additional P0 fixes from Pro:
+
+- `--root` now resolves after CLI parsing and overrides an invalid `CODEX_SUPERVISE_ROOT`.
+- `discover_project_root` catches `OSError` from Git/cwd probing.
+- `--packet full` validates dirty paths before building the diff, blocks sensitive filenames and binaries, and no longer uses `git diff --binary`.
+- Staged changes are blocked for compact and full packets so index blobs cannot differ from the visible working tree.
+- `is_binary_file` reads only the first 4096 bytes instead of loading the full file.
+- `codex-supervise.cmd` resolves the supervisor script from `%~dp0` instead of assuming a specific user profile path.
+
+Additional targeted checks:
+
+```text
+invalid CODEX_SUPERVISE_ROOT overridden by --root: OK
+invalid CODEX_SUPERVISE_ROOT without --root fails clearly: OK
+tracked .env full packet blocked: OK
+untracked secret full packet blocked: OK
+binary full packet blocked: OK
+staged secret compact blocked: OK
+staged rename full blocked: OK
+staged binary compact blocked: OK
+```
