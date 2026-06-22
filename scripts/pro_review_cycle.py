@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Iterable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,6 +18,50 @@ ROUNDS_ROOT = ROOT / "docs" / "review" / "pro-rounds"
 ROUND_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}$")
 MAX_DIFF_CHARS = 140000
 MAX_UNTRACKED_TEXT_CHARS = 60000
+MAX_COMPACT_PATCH_CHARS = 32000
+MAX_COMPACT_FILE_CHARS = 24000
+PACKET_CONTRACT_VERSION = 2
+ALWAYS_INCLUDED_REVIEW_FILES = [
+    "docs/review/status.md",
+    "docs/review/known-limitations.md",
+    "docs/review/reviewer-checklist.md",
+]
+FULL_PACKET_REVIEW_FILES = [
+    "REVIEW.md",
+    "docs/review/status.md",
+    "docs/review/known-limitations.md",
+    "docs/review/architecture-map.md",
+    "docs/review/validation-log.md",
+    "docs/review/reviewer-checklist.md",
+]
+COMPACT_SCOPE_FILES = {
+    "function-renderer": [
+        "assets/templates/function_graph.html",
+        "python/compiler/function_graph.py",
+        "scripts/generate_simulation.py",
+        "scripts/run_smoke_tests.py",
+        "tests/browser/function_graph.spec.ts",
+        "docs/review/validation-log.md",
+        "docs/review/status.md",
+    ],
+    "pro-loop": [
+        "scripts/pro_review_cycle.py",
+        "docs/review/pro-review-automation.md",
+        "docs/review/reviewer-checklist.md",
+        "SKILL.md",
+        "AGENTS.md",
+    ],
+    "docs": [
+        "REVIEW.md",
+        "SKILL.md",
+        "docs/review/pro-review-automation.md",
+        "docs/review/reviewer-checklist.md",
+        "docs/review/status.md",
+        "docs/review/known-limitations.md",
+        "docs/review/architecture-map.md",
+        "docs/review/validation-log.md",
+    ],
+}
 PLACEHOLDER_RESPONSE = "# ChatGPT Pro response\n\nPega aqui la respuesta completa si no se captura automaticamente.\n"
 PLACEHOLDER_BACKLOG = "# Review Backlog\n\nPendiente de ingerir respuesta.\n"
 SAFE_POPUP_BUTTONS = {
@@ -129,6 +174,82 @@ def dirty_patch_text() -> str:
     return payload[:MAX_DIFF_CHARS] + f"\n\n[TRUNCATED dirty patch: sha256={digest}, chars={len(payload)}]\n"
 
 
+def truncate_text(text: str, limit: int, label: str) -> str:
+    if len(text) <= limit:
+        return text
+    digest = sha256_text(text)
+    return text[:limit] + f"\n\n[TRUNCATED {label}: sha256={digest}, chars={len(text)}]\n"
+
+
+def scope_files(scope: str) -> list[str]:
+    if scope == "all":
+        files = set()
+        for values in COMPACT_SCOPE_FILES.values():
+            files.update(values)
+        return sorted(files)
+    return COMPACT_SCOPE_FILES.get(scope, COMPACT_SCOPE_FILES["pro-loop"])
+
+
+def unique_existing_files(files: Iterable[str]) -> list[str]:
+    seen: set[str] = set()
+    existing: list[str] = []
+    for relative in files:
+        if relative in seen:
+            continue
+        seen.add(relative)
+        path = ROOT / relative
+        if path.is_file():
+            existing.append(relative)
+    return existing
+
+
+def response_scope_for(packet: str, scope: str) -> str:
+    if packet == "full":
+        return "all"
+    return scope
+
+
+def prompt_files_included(packet: str, scope: str) -> list[str]:
+    if packet == "full":
+        return ["[git-dirty-patch]"] + unique_existing_files(FULL_PACKET_REVIEW_FILES)
+    return unique_existing_files([*scope_files(scope), *ALWAYS_INCLUDED_REVIEW_FILES])
+
+
+def files_included_block(packet: str, scope: str) -> str:
+    return "FILES_INCLUDED:\n" + "\n".join(f"- {item}" for item in prompt_files_included(packet, scope))
+
+
+def compact_diff_for(files: Iterable[str]) -> str:
+    existing = [item for item in files if (ROOT / item).exists()]
+    if not existing:
+        return "(no scoped files exist yet)"
+    command = ["git", "diff", "--", *existing]
+    completed = run(command)
+    if completed.returncode != 0:
+        raise RuntimeError(f"Command failed: {' '.join(command)}\n{completed.stderr.strip()}")
+    patch = completed.stdout.strip() or "(no scoped unstaged diff)"
+    staged = run(["git", "diff", "--cached", "--", *existing])
+    if staged.returncode != 0:
+        raise RuntimeError(f"Command failed: git diff --cached -- {' '.join(existing)}\n{staged.stderr.strip()}")
+    staged_patch = staged.stdout.strip() or "(no scoped staged diff)"
+    return truncate_text(f"$ {' '.join(command)}\n{patch}\n\n$ git diff --cached -- {' '.join(existing)}\n{staged_patch}", MAX_COMPACT_PATCH_CHARS, "compact scoped diff")
+
+
+def compact_file_snippets(files: Iterable[str]) -> str:
+    blocks: list[str] = []
+    for relative in files:
+        path = ROOT / relative
+        if not path.exists():
+            continue
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8", errors="replace")
+        blocks.append(
+            f"## {relative}\n\n```text\n{truncate_text(content.rstrip(), MAX_COMPACT_FILE_CHARS, relative)}\n```"
+        )
+    return "\n\n".join(blocks) if blocks else "(no scoped files to include)"
+
+
 def describe_untracked_files() -> str:
     listing = git_value(["git", "ls-files", "--others", "--exclude-standard"])
     if not listing:
@@ -157,12 +278,18 @@ def describe_untracked_files() -> str:
     return "\n".join(blocks)
 
 
-def new_manifest(round_id: str, focus: str, nonce: str, prompt: str, transport: str) -> dict:
+def new_manifest(round_id: str, focus: str, nonce: str, prompt: str, transport: str, packet: str, scope: str) -> dict:
+    response_scope = response_scope_for(packet, scope)
     return {
         "round_id": round_id,
         "nonce": nonce,
+        "contract_version": PACKET_CONTRACT_VERSION,
         "state": "created",
         "transport": transport,
+        "packet": packet,
+        "scope": scope,
+        "response_scope": response_scope,
+        "files_included": prompt_files_included(packet, scope),
         "focus": focus,
         "created_at": dt.datetime.now(dt.UTC).isoformat(),
         "updated_at": dt.datetime.now(dt.UTC).isoformat(),
@@ -177,13 +304,90 @@ def new_manifest(round_id: str, focus: str, nonce: str, prompt: str, transport: 
     }
 
 
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def copy_packet_file(source_relative: str, files_dir: Path) -> dict[str, object]:
+    source = (ROOT / source_relative).resolve()
+    root = ROOT.resolve()
+    if source != root and root not in source.parents:
+        raise ValueError(f"Packet file escapes repository: {source_relative}")
+    if not source.is_file():
+        raise FileNotFoundError(source)
+    destination = (files_dir / source_relative).resolve()
+    if files_dir.resolve() != destination and files_dir.resolve() not in destination.parents:
+        raise ValueError(f"Packet destination escapes packet files directory: {source_relative}")
+    data = source.read_bytes()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(data)
+    return {
+        "path": source_relative,
+        "bytes": len(data),
+        "sha256": sha256_bytes(data),
+    }
+
+
+def write_packet_snapshot(round_id: str, prompt: str, manifest: dict) -> dict[str, object]:
+    target = round_path(round_id)
+    packet_dir = target / "packet"
+    files_dir = packet_dir / "files"
+    packet_dir.mkdir(parents=True, exist_ok=True)
+    files_dir.mkdir(parents=True, exist_ok=True)
+
+    copied_files = []
+    for relative in manifest.get("files_included", []):
+        if str(relative).startswith("["):
+            continue
+        copied_files.append(copy_packet_file(str(relative), files_dir))
+
+    if manifest.get("packet") == "full":
+        diff_name = "dirty.patch"
+        diff_text = dirty_patch_text()
+    else:
+        diff_name = "scoped.diff"
+        diff_text = compact_diff_for(scope_files(str(manifest.get("scope", "pro-loop"))))
+    atomic_write_text(packet_dir / diff_name, diff_text.rstrip() + "\n")
+
+    packet_manifest = {
+        "round_id": round_id,
+        "contract_version": PACKET_CONTRACT_VERSION,
+        "packet": manifest.get("packet"),
+        "scope": manifest.get("scope"),
+        "response_scope": manifest.get("response_scope"),
+        "files_included": manifest.get("files_included", []),
+        "copied_files": copied_files,
+        "diff_file": diff_name,
+        "diff_sha256": sha256_text(diff_text.rstrip() + "\n"),
+        "prompt_sha256": sha256_text(prompt.rstrip() + "\n"),
+        "generated_at": dt.datetime.now(dt.UTC).isoformat(),
+    }
+    packet_manifest_text = json.dumps(packet_manifest, ensure_ascii=True, indent=2) + "\n"
+    atomic_write_text(packet_dir / "manifest.json", packet_manifest_text)
+    return {
+        "manifest_path": "packet/manifest.json",
+        "manifest_sha256": sha256_text(packet_manifest_text),
+        "diff_file": f"packet/{diff_name}",
+        "diff_sha256": packet_manifest["diff_sha256"],
+        "files_copied": [item["path"] for item in copied_files],
+    }
+
+
+def write_round_manifest_with_packet(round_id: str, prompt: str, manifest: dict) -> None:
+    manifest["packet_snapshot"] = write_packet_snapshot(round_id, prompt, manifest)
+    write_round_manifest(round_id, manifest)
+
+
 def assert_response_identity(round_id: str, response: str) -> dict:
     manifest = read_round_manifest(round_id)
     nonce = str(manifest.get("nonce", ""))
     lines = [line.strip() for line in response.lstrip().splitlines() if line.strip()]
     expected_prefix = [f"ROUND_ID: {round_id}", f"NONCE: {nonce}"]
-    if lines[:2] != expected_prefix:
-        raise ValueError(f"La respuesta no empieza con ROUND_ID/NONCE de la ronda {round_id}.")
+    response_scope = manifest.get("response_scope")
+    if response_scope:
+        expected_prefix.append(f"SCOPE_REVISADO: {response_scope}")
+    if lines[:len(expected_prefix)] != expected_prefix:
+        raise ValueError(f"La respuesta no empieza con ROUND_ID/NONCE/SCOPE_REVISADO de la ronda {round_id}.")
     if lines[-1:] != [f"END_REVIEW: {nonce}"]:
         raise ValueError(f"La respuesta no termina con END_REVIEW de la ronda {round_id}.")
     prompt_path = round_path(round_id) / "prompt.md"
@@ -201,8 +405,54 @@ def assert_response_identity(round_id: str, response: str) -> dict:
     return manifest
 
 
-def build_prompt(round_id: str, focus: str, nonce: str) -> str:
+def normalize_response_for_round(round_id: str, response: str, manifest: dict) -> tuple[str, int]:
+    marker = f"ROUND_ID: {round_id}"
+    stripped = response.lstrip()
+    if stripped.startswith(marker):
+        return stripped, len(response) - len(stripped)
+
+    index = response.rfind(f"\n{marker}")
+    if index < 0:
+        index = response.find(marker)
+    if index < 0:
+        return response, 0
+
+    start = index + (1 if response[index:index + 1] == "\n" else 0)
+    trimmed = response[start:].lstrip()
+    prompt_hash = manifest.get("hashes", {}).get("prompt_sha256")
+    if prompt_hash and prompt_hash == sha256_text(trimmed.rstrip() + "\n"):
+        return response, 0
+    return trimmed, start + len(response[start:]) - len(trimmed)
+
+
+def response_format_contract(round_id: str, nonce: str, response_scope: str) -> str:
+    return f"""Tu respuesta debe empezar exactamente con estas tres lineas, sin saludo, sin resumen previo y sin repetir el prompt:
+
+```text
+ROUND_ID: {round_id}
+NONCE: {nonce}
+SCOPE_REVISADO: {response_scope}
+```
+
+Luego devuelve estas secciones Markdown, todas obligatorias:
+
+- `Dictamen`: aprobado, aprobado con cambios, o cambios solicitados.
+- `P0`: solo bloqueos reales antes de commit/push.
+- `P1`: mejoras importantes no bloqueantes.
+- `P2`: limpieza o deuda aceptable.
+- `Plan recomendado`: pasos ordenados para Codex.
+- `Pruebas sugeridas`: comandos o fixtures que deberían existir.
+
+Termina exactamente con:
+
+```text
+END_REVIEW: {nonce}
+```"""
+
+
+def build_full_prompt(round_id: str, focus: str, nonce: str, scope: str) -> str:
     repo_url = "https://github.com/I-Fog/skill-graphic"
+    response_scope = response_scope_for("full", scope)
     status = command_text(["git", "status", "--short"])
     branch = command_text(["git", "branch", "--show-current"])
     head = command_text(["git", "rev-parse", "HEAD"])
@@ -216,6 +466,12 @@ Repositorio: {repo_url}
 Rama esperada: `codex/skill-graphic-mvp`
 Ronda: `{round_id}`
 Nonce de ronda: `{nonce}`
+Tipo de paquete: `full`
+Scope: `{response_scope}`
+
+## Archivos y artefactos incluidos
+
+{files_included_block("full", scope)}
 
 ## Rol
 
@@ -235,27 +491,7 @@ No ejecutes tests: revisa estáticamente el repo y el contexto incluido. Tu sali
 
 ## Formato de respuesta
 
-Empieza tu respuesta exactamente con:
-
-```text
-ROUND_ID: {round_id}
-NONCE: {nonce}
-```
-
-Luego devuelve:
-
-- `Dictamen`: aprobado, aprobado con cambios, o cambios solicitados.
-- `P0`: bloqueos concretos, con archivo o zona afectada.
-- `P1`: mejoras importantes.
-- `P2`: limpieza o deuda aceptable.
-- `Plan recomendado`: pasos ordenados para Codex.
-- `Pruebas sugeridas`: comandos o fixtures que deberían existir.
-
-Termina tu respuesta exactamente con:
-
-```text
-END_REVIEW: {nonce}
-```
+{response_format_contract(round_id, nonce, response_scope)}
 
 ## Estado Git local reportado por Codex
 
@@ -313,6 +549,102 @@ END_REVIEW: {nonce}
 {safe_read("docs/review/reviewer-checklist.md")}
 ```
 """
+
+
+def build_compact_prompt(round_id: str, focus: str, nonce: str, scope: str) -> str:
+    repo_url = "https://github.com/I-Fog/skill-graphic"
+    files = scope_files(scope)
+    response_scope = response_scope_for("compact", scope)
+    status = command_text(["git", "status", "--short"])
+    branch = command_text(["git", "branch", "--show-current"])
+    head = command_text(["git", "rev-parse", "HEAD"])
+    latest = command_text(["git", "show", "--stat", "--oneline", "--decorate", "-1"])
+    diff = command_text(["git", "diff", "--stat"])
+    scoped_diff = compact_diff_for(files)
+    snippets = compact_file_snippets(files)
+
+    return f"""# Paquete compacto de revisión para ChatGPT Pro
+
+Repositorio: {repo_url}
+Rama esperada: `codex/skill-graphic-mvp`
+Ronda: `{round_id}`
+Nonce de ronda: `{nonce}`
+Tipo de paquete: `compact`
+Scope: `{scope}`
+
+## Archivos incluidos
+
+{files_included_block("compact", scope)}
+
+## Instrucción principal
+
+Revisa solo el scope indicado y decide si queda algun P0 antes de commit/push. No intentes revisar todo el repositorio si el paquete no lo incluye. Si necesitas mas contexto, pídelo como P1/P2, no como P0 salvo que bloquee realmente.
+
+## Foco de esta ronda
+
+{focus}
+
+## Criterios de revisión cerrados
+
+- Busca P0 de contrato, render-model, DOM/SVG, navegación/timeline, evidencia de navegador o incoherencia entre docs y código.
+- No marques como P0 una deuda ya declarada en `known-limitations.md` salvo que contradiga el cambio actual.
+- Si una evidencia local afirma haber ejecutado tests, revisa que el cambio cubra lo que dice, pero no inventes resultados.
+- Mantén las sugerencias compactas: prioriza acciones que Codex pueda aplicar en la siguiente iteración.
+
+## Formato de respuesta obligatorio
+
+{response_format_contract(round_id, nonce, response_scope)}
+
+## Estado Git local
+
+```text
+{branch}
+
+{head}
+
+{status}
+
+{latest}
+
+{diff}
+```
+
+## Diff scoped
+
+````diff
+{scoped_diff}
+````
+
+## Archivos relevantes del scope
+
+{snippets}
+
+## Estado actual documentado
+
+```markdown
+{safe_read("docs/review/status.md")}
+```
+
+## Limitaciones conocidas
+
+```markdown
+{safe_read("docs/review/known-limitations.md")}
+```
+
+## Checklist de revisión
+
+```markdown
+{safe_read("docs/review/reviewer-checklist.md")}
+```
+"""
+
+
+def build_prompt(round_id: str, focus: str, nonce: str, packet: str = "compact", scope: str = "pro-loop") -> str:
+    if packet == "full":
+        return build_full_prompt(round_id, focus, nonce, scope)
+    if packet != "compact":
+        raise ValueError(f"Unknown packet type: {packet}")
+    return build_compact_prompt(round_id, focus, nonce, scope)
 
 
 def copy_to_clipboard(text: str) -> None:
@@ -566,6 +898,7 @@ def wait_for_uia_response(round_id: str, timeout_seconds: int, poll_seconds: flo
     deadline = time.monotonic() + timeout_seconds
     last_candidate = ""
     stable_count = 0
+    manifest = read_round_manifest(round_id)
     while time.monotonic() < deadline:
         time.sleep(poll_seconds)
         if is_uia_generation_active():
@@ -575,6 +908,7 @@ def wait_for_uia_response(round_id: str, timeout_seconds: int, poll_seconds: flo
         if not candidate or not looks_like_review_response(candidate):
             stable_count = 0
             continue
+        candidate, _ = normalize_response_for_round(round_id, candidate, manifest)
         try:
             assert_response_identity(round_id, candidate)
         except ValueError:
@@ -597,7 +931,7 @@ def create_round(args: argparse.Namespace) -> int:
     round_id = args.round_id or current_round_id()
     round_path(round_id)
     nonce = secrets.token_hex(8)
-    prompt = build_prompt(round_id, args.focus, nonce)
+    prompt = build_prompt(round_id, args.focus, nonce, packet=args.packet, scope=args.scope)
     if args.dry_run:
         print(prompt)
         return 0
@@ -608,7 +942,8 @@ def create_round(args: argparse.Namespace) -> int:
     atomic_write_text(destination / "prompt.md", prompt.rstrip() + "\n")
     atomic_write_text(destination / "response.md", PLACEHOLDER_RESPONSE)
     atomic_write_text(destination / "backlog.md", PLACEHOLDER_BACKLOG)
-    write_round_manifest(round_id, new_manifest(round_id, args.focus, nonce, prompt, "clipboard"))
+    manifest = new_manifest(round_id, args.focus, nonce, prompt, "clipboard", args.packet, args.scope)
+    write_round_manifest_with_packet(round_id, prompt, manifest)
 
     if args.copy:
         copy_to_clipboard(prompt)
@@ -620,15 +955,21 @@ def create_round(args: argparse.Namespace) -> int:
     return 0
 
 
-def create_round_files(round_id: str, focus: str, copy: bool, transport: str) -> Path:
+def pack_round(args: argparse.Namespace) -> int:
+    args.packet = "compact"
+    return create_round(args)
+
+
+def create_round_files(round_id: str, focus: str, copy: bool, transport: str, packet: str, scope: str) -> Path:
     nonce = secrets.token_hex(8)
-    prompt = build_prompt(round_id, focus, nonce)
+    prompt = build_prompt(round_id, focus, nonce, packet=packet, scope=scope)
     destination = round_path(round_id)
     destination.mkdir(parents=True, exist_ok=False)
     atomic_write_text(destination / "prompt.md", prompt.rstrip() + "\n")
     atomic_write_text(destination / "response.md", PLACEHOLDER_RESPONSE)
     atomic_write_text(destination / "backlog.md", PLACEHOLDER_BACKLOG)
-    write_round_manifest(round_id, new_manifest(round_id, focus, nonce, prompt, transport))
+    manifest = new_manifest(round_id, focus, nonce, prompt, transport, packet, scope)
+    write_round_manifest_with_packet(round_id, prompt, manifest)
     if copy:
         copy_to_clipboard(prompt)
         update_round_state(round_id, "prompt_copied")
@@ -701,12 +1042,52 @@ def render_backlog(round_id: str, response: str) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def verify_packet_snapshot(round_id: str, manifest: dict) -> None:
+    if int(manifest.get("contract_version", 1)) < PACKET_CONTRACT_VERSION:
+        return
+    snapshot = manifest.get("packet_snapshot")
+    if not isinstance(snapshot, dict):
+        raise ValueError("round.json no contiene packet_snapshot para una ronda v2.")
+    target = round_path(round_id)
+    packet_manifest_path = target / str(snapshot.get("manifest_path", ""))
+    if not packet_manifest_path.is_file():
+        raise ValueError("packet/manifest.json no existe.")
+    packet_manifest_text = packet_manifest_path.read_text(encoding="utf-8")
+    if snapshot.get("manifest_sha256") != sha256_text(packet_manifest_text):
+        raise ValueError("packet/manifest.json no coincide con round.json packet_snapshot.manifest_sha256.")
+    packet_manifest = json.loads(packet_manifest_text)
+    if packet_manifest.get("round_id") != round_id:
+        raise ValueError("packet/manifest.json no coincide con round_id.")
+    if packet_manifest.get("response_scope") != manifest.get("response_scope"):
+        raise ValueError("packet/manifest.json no coincide con response_scope.")
+    diff_path = target / str(snapshot.get("diff_file", ""))
+    if not diff_path.is_file():
+        raise ValueError("El diff del packet snapshot no existe.")
+    diff_text = diff_path.read_text(encoding="utf-8")
+    if snapshot.get("diff_sha256") != sha256_text(diff_text):
+        raise ValueError("El diff del packet snapshot no coincide con round.json.")
+
+    copied_by_path = {item["path"]: item for item in packet_manifest.get("copied_files", [])}
+    for relative in snapshot.get("files_copied", []):
+        copied = target / "packet" / "files" / relative
+        if not copied.is_file():
+            raise ValueError(f"Falta archivo copiado en packet snapshot: {relative}")
+        data = copied.read_bytes()
+        item = copied_by_path.get(relative)
+        if not item:
+            raise ValueError(f"packet/manifest.json no registra archivo copiado: {relative}")
+        if item.get("sha256") != sha256_bytes(data):
+            raise ValueError(f"Hash incorrecto en packet snapshot para {relative}.")
+
+
 def store_response_and_backlog(round_id: str, response: str) -> Path:
     target = round_path(round_id)
     if not target.exists():
         raise FileNotFoundError(target)
     if "Pega aqui la respuesta completa" in response or not response.strip():
         raise ValueError(f"No hay respuesta real para ingerir en {target / 'response.md'}.")
+    manifest = read_round_manifest(round_id)
+    response, trimmed_prefix_chars = normalize_response_for_round(round_id, response, manifest)
     manifest = assert_response_identity(round_id, response)
     rendered_backlog = render_backlog(round_id, response)
     atomic_write_text(target / "response.md", response.rstrip() + "\n")
@@ -714,6 +1095,8 @@ def store_response_and_backlog(round_id: str, response: str) -> Path:
     atomic_write_text(backlog_path, rendered_backlog)
     manifest.setdefault("hashes", {})["response_sha256"] = sha256_text(response.rstrip() + "\n")
     manifest.setdefault("hashes", {})["backlog_sha256"] = sha256_text(rendered_backlog)
+    if trimmed_prefix_chars:
+        manifest["trimmed_response_prefix_chars"] = trimmed_prefix_chars
     manifest["state"] = "ingested"
     manifest["updated_at"] = dt.datetime.now(dt.UTC).isoformat()
     write_round_manifest(round_id, manifest)
@@ -748,6 +1131,8 @@ def run_round(args: argparse.Namespace) -> int:
         args.focus,
         copy=args.transport == "clipboard",
         transport=args.transport,
+        packet=args.packet,
+        scope=args.scope,
     )
     prompt_path = destination / "prompt.md"
     print(destination)
@@ -817,6 +1202,7 @@ def verify_round(args: argparse.Namespace) -> int:
     expected_prompt_hash = manifest.get("hashes", {}).get("prompt_sha256")
     if expected_prompt_hash != sha256_text(prompt.rstrip() + "\n"):
         raise ValueError("prompt.md no coincide con round.json hashes.prompt_sha256.")
+    verify_packet_snapshot(args.round_id, manifest)
     assert_response_identity(args.round_id, response)
     if "Pega aqui la respuesta completa" in response:
         raise ValueError("response.md sigue siendo placeholder.")
@@ -853,6 +1239,7 @@ def self_test(_: argparse.Namespace) -> int:
     nonce = "nonce-test"
     response = f"""ROUND_ID: {round_id}
 NONCE: {nonce}
+SCOPE_REVISADO: pro-loop
 
 # Dictamen
 
@@ -886,12 +1273,18 @@ END_REVIEW: {nonce}
     assert backlog["P1"] == ["- Añadir test de segmentos en discontinuidades."]
     assert backlog["Plan"] == ["1. Crear compilador.", "2. Añadir fixtures."]
     assert backlog["Tests"] == ["- `python scripts/run_smoke_tests.py`"]
-    prompt = build_prompt(round_id, "Comprobar generacion de prompt.", nonce)
-    assert "Solicitud de revisión para ChatGPT Pro" in prompt
-    assert "Guía de revisión del repo" in prompt
+    prompt = build_prompt(round_id, "Comprobar generacion de prompt.", nonce, packet="compact", scope="pro-loop")
+    assert "Paquete compacto de revisión para ChatGPT Pro" in prompt
+    assert "Scope: `pro-loop`" in prompt
     assert f"ROUND_ID: {round_id}" in prompt
     assert f"NONCE: {nonce}" in prompt
+    assert "SCOPE_REVISADO: pro-loop" in prompt
+    assert "FILES_INCLUDED:" in prompt
     assert f"END_REVIEW: {nonce}" in prompt
+    full_prompt = build_prompt(round_id, "Comprobar generacion de prompt completo.", nonce, packet="full")
+    assert "Solicitud de revisión para ChatGPT Pro" in full_prompt
+    assert "Guía de revisión del repo" in full_prompt
+    assert "SCOPE_REVISADO: all" in full_prompt
     assert looks_like_review_response(response)
     assert not looks_like_review_response("texto corto")
     assert round_path("safe-round_1.2").name == "safe-round_1.2"
@@ -904,14 +1297,17 @@ END_REVIEW: {nonce}
     temp_round = f"self-test-{secrets.token_hex(3)}"
     temp_target = round_path(temp_round)
     temp_nonce = "nonce-temp"
-    temp_prompt = build_prompt(temp_round, "Comprobar identidad.", temp_nonce)
+    temp_prompt = build_prompt(temp_round, "Comprobar identidad.", temp_nonce, packet="compact", scope="pro-loop")
     temp_response = response.replace(round_id, temp_round).replace(nonce, temp_nonce)
     try:
         temp_target.mkdir(parents=True, exist_ok=False)
         atomic_write_text(temp_target / "prompt.md", temp_prompt.rstrip() + "\n")
         atomic_write_text(temp_target / "response.md", PLACEHOLDER_RESPONSE)
         atomic_write_text(temp_target / "backlog.md", PLACEHOLDER_BACKLOG)
-        write_round_manifest(temp_round, new_manifest(temp_round, "Comprobar identidad.", temp_nonce, temp_prompt, "self-test"))
+        temp_manifest = new_manifest(temp_round, "Comprobar identidad.", temp_nonce, temp_prompt, "self-test", "compact", "pro-loop")
+        write_round_manifest_with_packet(temp_round, temp_prompt, temp_manifest)
+        assert (temp_target / "packet" / "manifest.json").exists()
+        assert (temp_target / "packet" / "scoped.diff").exists()
         assert_response_identity(temp_round, temp_response)
         try:
             assert_response_identity(temp_round, temp_prompt)
@@ -945,6 +1341,10 @@ END_REVIEW: {nonce}
         else:
             raise AssertionError("invalid response stored")
         assert (temp_target / "response.md").read_text(encoding="utf-8") == before_invalid
+        prefixed_response = "texto copiado antes de la respuesta\n\n" + temp_response
+        store_response_and_backlog(temp_round, prefixed_response)
+        assert (temp_target / "response.md").read_text(encoding="utf-8").startswith(f"ROUND_ID: {temp_round}")
+        assert read_round_manifest(temp_round).get("trimmed_response_prefix_chars", 0) > 0
         store_response_and_backlog(temp_round, temp_response)
         verify_round(argparse.Namespace(round_id=temp_round))
         atomic_write_text(temp_target / "backlog.md", "# Review Backlog\n\nmanipulado\n")
@@ -984,13 +1384,25 @@ END_REVIEW: {nonce}
 def main() -> int:
     parser = argparse.ArgumentParser(description="Prepare and ingest ChatGPT Pro review rounds.")
     subparsers = parser.add_subparsers(dest="command", required=True)
+    packet_choices = ("compact", "full")
+    scope_choices = ("pro-loop", "function-renderer", "docs", "all")
 
     create = subparsers.add_parser("create", help="Create a review round and prompt.")
     create.add_argument("--round-id", help="Stable round id. Defaults to timestamp.")
     create.add_argument("--focus", default="Revisar el estado actual y proponer la siguiente iteracion tecnica.")
+    create.add_argument("--packet", choices=packet_choices, default="compact", help="Prompt packet size. Compact is the default to avoid oversized pasted-text prompts.")
+    create.add_argument("--scope", choices=scope_choices, default="pro-loop", help="Compact packet scope.")
     create.add_argument("--copy", action="store_true", help="Copy prompt to Windows clipboard.")
     create.add_argument("--dry-run", action="store_true", help="Print prompt without writing a round.")
     create.set_defaults(func=create_round)
+
+    pack = subparsers.add_parser("pack", help="Create a compact scoped review packet without sending it.")
+    pack.add_argument("--round-id", help="Stable round id. Defaults to timestamp.")
+    pack.add_argument("--focus", default="Revisar el scope indicado y decidir si queda algun P0 antes de commit/push.")
+    pack.add_argument("--scope", choices=scope_choices, default="pro-loop", help="Compact packet scope.")
+    pack.add_argument("--copy", action="store_true", help="Copy prompt to Windows clipboard.")
+    pack.add_argument("--dry-run", action="store_true", help="Print prompt without writing a round.")
+    pack.set_defaults(func=pack_round)
 
     ingest = subparsers.add_parser("ingest", help="Ingest ChatGPT Pro response into backlog.")
     ingest.add_argument("round_id")
@@ -1001,6 +1413,8 @@ def main() -> int:
     run_cmd.add_argument("--round-id", help="Stable round id. Defaults to timestamp.")
     run_cmd.add_argument("--focus", default="Revisar el estado actual y proponer la siguiente iteracion tecnica.")
     run_cmd.add_argument("--open-url", help="Optional ChatGPT conversation URL to open.")
+    run_cmd.add_argument("--packet", choices=packet_choices, default="compact", help="Prompt packet size. Use full only for broad audits.")
+    run_cmd.add_argument("--scope", choices=scope_choices, default="pro-loop", help="Compact packet scope.")
     run_cmd.add_argument("--transport", choices=["clipboard", "uia"], default="clipboard")
     run_cmd.add_argument("--wait-clipboard", action="store_true", help="Poll clipboard until a review response appears.")
     run_cmd.add_argument("--timeout-seconds", type=int, default=1800)

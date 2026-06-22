@@ -23,9 +23,9 @@
 
 ## Browser Testing
 
-- There is no committed Playwright test suite.
+- The function renderer has a committed Playwright spec, but it is not wired into CI yet.
 - Static screenshots are included for review, including function graph desktop, mobile, and primitive-scene views, but they are not a replacement for CI.
-- Smoothness and reversibility of timelines are not measured automatically.
+- Smoothness and reversibility of timelines are only partially measured through scene-boundary and navigation invariants; richer motion regression remains manual.
 
 ## Security And Portability
 

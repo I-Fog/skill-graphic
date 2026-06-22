@@ -23,6 +23,9 @@ FUNCTION_EXAMPLE = ROOT / "examples" / "function-graph-cubic" / "input.json"
 FUNCTION_MATH_OUTPUT = ROOT / "dist" / "function-graph-cubic.math.json"
 FUNCTION_RENDER_OUTPUT = ROOT / "dist" / "function-graph-cubic.render.json"
 FUNCTION_HTML_OUTPUT = ROOT / "dist" / "function-graph-cubic.html"
+FUNCTION_BROWSER_SPEC = ROOT / "tests" / "browser" / "function_graph.spec.ts"
+PRO_REVIEW_CYCLE = ROOT / "scripts" / "pro_review_cycle.py"
+PRO_REVIEW_DOC = ROOT / "docs" / "review" / "pro-review-automation.md"
 FUNCTION_EXPECTED = ROOT / "examples" / "function-graph-cubic" / "expected-math.json"
 INTEGRAL_EXAMPLE = ROOT / "examples" / "indefinite-integral-tan-sin" / "input.json"
 INTEGRAL_MATH_OUTPUT = ROOT / "dist" / "indefinite-integral-tan-sin.math.json"
@@ -232,6 +235,49 @@ def check_function_html() -> None:
     assert "&quot;" not in html_text.split('id="simulation-data"', 1)[1].split("</script>", 1)[0]
 
 
+def check_function_browser_spec() -> None:
+    assert_contains(
+        FUNCTION_BROWSER_SPEC,
+        [
+            "keeps scene navigation exact and reversible",
+            "maps scene boundaries as half-open intervals",
+            "renders derivative and primitive curves visibly inside the SVG",
+            "preserves exact millisecond scene on reload",
+            "keeps mobile overlay and controls separated",
+            "FUNCTION_GRAPH_URL",
+            "curve-antiderivative-0",
+            "curve-derivative-0",
+            "setViewportSize({ width: 390, height: 760 })",
+        ],
+    )
+
+
+def check_pro_review_contract() -> None:
+    assert_contains(
+        PRO_REVIEW_CYCLE,
+        [
+            "PACKET_CONTRACT_VERSION = 2",
+            "SCOPE_REVISADO:",
+            "FILES_INCLUDED:",
+            "write_packet_snapshot",
+            "verify_packet_snapshot",
+            "packet/manifest.json",
+            "files_included",
+            "response_scope",
+        ],
+    )
+    assert_contains(
+        PRO_REVIEW_DOC,
+        [
+            "SCOPE_REVISADO",
+            "FILES_INCLUDED",
+            "packet/manifest.json",
+            "packet/files/",
+            "packet_snapshot",
+        ],
+    )
+
+
 def assert_expected_validation_failure(example: dict, label: str) -> None:
     expected = example.get("expected_failure")
     if not expected:
@@ -340,6 +386,8 @@ def main() -> int:
     assert_expected_math(function_result, FUNCTION_EXPECTED)
     check_function_render_model(function_example, function_result)
     check_function_html()
+    check_function_browser_spec()
+    check_pro_review_contract()
 
     integral_result = generate_checked(INTEGRAL_EXAMPLE, INTEGRAL_MATH_OUTPUT, INTEGRAL_HTML_OUTPUT, schema)
     assert_expected_math(integral_result, INTEGRAL_EXPECTED)

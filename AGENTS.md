@@ -22,7 +22,12 @@ This repo defines a Codex skill and runtime scaffold for exact, interactive educ
 - Keep the timeline as a draggable scrubber so the user can move backward and forward with the cursor.
 - Serve generated HTML over local HTTP for browser validation:
   `python scripts/serve_dist.py`
-- Use `python scripts/pro_review_cycle.py run --transport uia` for the repeatable ChatGPT Pro review loop through the integrated browser. If UIA cannot access ChatGPT, use `create --copy` plus `ingest <round-id> --from-clipboard`. Finish completed rounds with `python scripts/pro_review_cycle.py verify <round-id>`. Round artifacts live in `docs/review/pro-rounds/`.
+- Use compact scoped Pro packets by default:
+  `python scripts/pro_review_cycle.py run --transport uia --scope function-renderer`
+- Use `--scope pro-loop`, `--scope function-renderer`, `--scope docs`, or `--scope all` to match the review target. Use `--packet full` only for broad audits where Pro needs the full dirty diff.
+- Every Pro round must include `FILES_INCLUDED`, require `SCOPE_REVISADO` in the answer, and write a reproducible `packet/` snapshot with `packet/manifest.json`, copied files, and the packet diff.
+- If UIA cannot access ChatGPT, use `python scripts/pro_review_cycle.py pack --scope <scope> --copy` plus `python scripts/pro_review_cycle.py ingest <round-id> --from-clipboard`. Finish completed rounds with `python scripts/pro_review_cycle.py verify <round-id>`. Round artifacts live in `docs/review/pro-rounds/`.
+- Use `npm run test:function-graph` for the versioned browser regression check of the function renderer. Serve `dist/` first and set `FUNCTION_GRAPH_URL` if not using port 8765.
 
 ## Validation
 

@@ -14,9 +14,9 @@ Last updated: 2026-06-22
 | Contract semantics | Improved | `python/validator/contract.py` | Required checks, allowed actions, slider refs, unique ids, and action-compatible targets are validated. |
 | Math validators | Improved | `python/validator/*.py` | Positive fixtures pass and negative fixtures fail. More edge cases are needed. |
 | Generator | Improved | `scripts/generate_simulation.py` | Always reruns validation and rejects stale, failed, or mismatched external math results. |
-| Smoke tests | Improved | `scripts/run_smoke_tests.py` | Includes positive fixtures, recursive expected-math checks, and expected negative failure metadata. |
-| Browser validation | Local only | `docs/review/screenshots/*.png` | Screenshots are static evidence; no CI browser run yet. |
-| ChatGPT Pro review loop | Improved | `scripts/pro_review_cycle.py`, `docs/review/pro-review-automation.md` | Review rounds include `round.json`, anchored nonce markers, final `END_REVIEW`, prompt/response/backlog hashes, UIA transport for the integrated browser, and clipboard fallback. |
+| Smoke tests | Improved | `scripts/run_smoke_tests.py` | Includes positive fixtures, recursive expected-math checks, expected negative failure metadata, generated function HTML checks, static browser-spec presence checks, and Pro packet contract checks. |
+| Browser validation | Versioned local check | `tests/browser/function_graph.spec.ts`, `docs/review/screenshots/*.png` | Function renderer has a Playwright spec for navigation, boundaries, derivative/primitive visibility, reload state, and mobile overlay separation. No CI browser run yet. |
+| ChatGPT Pro review loop | Improved | `scripts/pro_review_cycle.py`, `docs/review/pro-review-automation.md` | Review rounds use compact scoped packets by default, preserve full-packet fallback, include `FILES_INCLUDED`, require `SCOPE_REVISADO`, write `packet/manifest.json` plus copied files/diff, preserve `round.json`, anchored nonce markers, final `END_REVIEW`, hashes, UIA transport, clipboard fallback, and copied-response prefix trimming. |
 
 ## Current Risk Level
 

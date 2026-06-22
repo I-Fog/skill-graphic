@@ -2,6 +2,16 @@
 
 Use this checklist when reviewing without executing tests.
 
+## Review Packet Discipline
+
+- Is the packet scoped to the requested area (`pro-loop`, `function-renderer`, `docs`, or `all`)?
+- Does the prompt include `FILES_INCLUDED`, and does the answer start with the matching `SCOPE_REVISADO`?
+- Does `packet/manifest.json` match the files and diff that the prompt says were sent?
+- Are P0 findings limited to blockers for the current scope, not broad future debt?
+- Does the response start with the exact `ROUND_ID` and `NONCE` and end with `END_REVIEW`?
+- If the packet reports local browser evidence, does the code or test cover the same invariant?
+- If more files are needed, request a follow-up packet instead of inferring from missing context.
+
 ## Contract
 
 - Does `schemas/simulation.schema.json` expose enough structure for the next generic renderer?
@@ -26,7 +36,7 @@ Use this checklist when reviewing without executing tests.
 ## Browser Evidence
 
 - Are the static screenshots sufficient for a human review pass?
-- What Playwright checks should be added first?
+- Do committed Playwright checks cover scene navigation, boundaries, visible derivative/primitive curves, reload state, and mobile overlays?
 - Which DOM or SVG invariants should be asserted before pixel screenshots?
 
 ## Merge Standard

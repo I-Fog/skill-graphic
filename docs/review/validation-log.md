@@ -132,3 +132,80 @@ SHA256 79a7734f52e4fd9d93bc7d96fb311b4eb0bfbe9211d1e84dfa053613c5770d2b  docs/re
 - Timeline dragging in committed CI browser tests.
 - Mobile/tablet screenshot comparison beyond the current function fixture browser capture.
 - Broad `function_graph.html` coverage for asymptotes, discontinuities, multiple functions, and more camera plans.
+
+## Additional Validation After Pro Workflow Update
+
+Date: 2026-06-22
+
+Commands:
+
+```powershell
+npm install --save-dev @playwright/test
+npx playwright install chromium
+npx playwright --version
+python scripts\pro_review_cycle.py self-test
+python scripts\pro_review_cycle.py pack --dry-run --scope pro-loop --focus "Smoke compact pack"
+python scripts\pro_review_cycle.py create --dry-run --packet full --focus "Smoke full pack"
+python scripts\run_smoke_tests.py
+python C:\Users\casti\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
+git diff --check
+$env:FUNCTION_GRAPH_URL="http://127.0.0.1:8774/dist/function-graph-cubic.html"
+npm run test:function-graph -- --reporter=list
+Remove-Item Env:\FUNCTION_GRAPH_URL -ErrorAction SilentlyContinue
+```
+
+Result:
+
+```text
+Playwright: Version 1.61.0
+pro review cycle self-test passed
+compact scoped packet dry-run generated
+full packet dry-run generated
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\surface-revolution.html
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\function-graph-cubic.math.json
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\function-graph-cubic.render.json
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\function-graph-cubic.html
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\indefinite-integral-tan-sin.html
+Skill is valid!
+git diff --check: exit code 0; PowerShell reported only the expected CRLF warning for .gitignore
+function graph browser spec: 5 passed
+```
+
+The committed browser spec covers exact scene navigation, half-open scene boundaries, visible derivative and primitive curves, reload state preservation, and mobile overlay separation.
+
+## Additional Validation After Packet Snapshot Update
+
+Date: 2026-06-22
+
+Commands:
+
+```powershell
+python -m py_compile scripts\pro_review_cycle.py scripts\run_smoke_tests.py
+python scripts\pro_review_cycle.py self-test
+python scripts\run_smoke_tests.py
+python C:\Users\casti\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
+python scripts\pro_review_cycle.py pack --dry-run --scope pro-loop --focus "Smoke compact pack"
+python scripts\pro_review_cycle.py create --dry-run --packet full --focus "Smoke full pack"
+python scripts\pro_review_cycle.py pack --round-id tmp-packet-inspect --scope pro-loop --focus "Inspect packet snapshot"
+$env:FUNCTION_GRAPH_URL="http://127.0.0.1:8775/dist/function-graph-cubic.html"
+npm run test:function-graph -- --reporter=list
+Remove-Item Env:\FUNCTION_GRAPH_URL -ErrorAction SilentlyContinue
+```
+
+Result:
+
+```text
+pro review cycle self-test passed
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\surface-revolution.html
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\function-graph-cubic.math.json
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\function-graph-cubic.render.json
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\function-graph-cubic.html
+Smoke tests passed: D:\PERSONAL\chatgpt\skills\skill_graphic\dist\indefinite-integral-tan-sin.html
+Skill is valid!
+compact dry-run includes FILES_INCLUDED for scope pro-loop
+full dry-run includes FILES_INCLUDED with [git-dirty-patch] and response scope all
+temporary packet snapshot wrote packet/manifest.json, scoped.diff, copied 7 files, and round.json packet_snapshot
+function graph browser spec: 5 passed
+```
+
+The Pro review contract now requires `SCOPE_REVISADO`, lists `FILES_INCLUDED` in every packet, and writes a reproducible `packet/` snapshot for non-dry-run rounds.

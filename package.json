@@ -1,0 +1,10 @@
+{
+  "name": "skill_graphic",
+  "private": true,
+  "scripts": {
+    "test:function-graph": "playwright test tests/browser/function_graph.spec.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0"
+  }
+}

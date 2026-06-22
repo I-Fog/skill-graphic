@@ -52,13 +52,15 @@ python scripts/serve_dist.py
 When the user wants ChatGPT Pro to validate or plan the next iteration, use:
 
 ```powershell
-python scripts/pro_review_cycle.py run --transport uia --focus "<review focus>"
+python scripts/pro_review_cycle.py run --transport uia --scope function-renderer --focus "<review focus>"
 ```
+
+Use compact scoped packets by default. Choose `--scope pro-loop`, `--scope function-renderer`, `--scope docs`, or `--scope all` based on the actual review target. Use `--packet full` only for broad audits where Pro must inspect the entire dirty diff. Each round must include `FILES_INCLUDED`, require `SCOPE_REVISADO` in the Pro response, and write a reproducible `packet/` snapshot.
 
 If UI Automation cannot access the integrated browser, fall back to clipboard mode:
 
 ```powershell
-python scripts/pro_review_cycle.py create --copy --focus "<review focus>"
+python scripts/pro_review_cycle.py pack --scope function-renderer --copy --focus "<review focus>"
 python scripts/pro_review_cycle.py ingest <round-id> --from-clipboard
 ```
 
@@ -68,7 +70,7 @@ Then verify the completed round:
 python scripts/pro_review_cycle.py verify <round-id>
 ```
 
-The round artifacts live in `docs/review/pro-rounds/<round-id>/` and include `round.json` identity metadata. Read `docs/review/pro-review-automation.md` before changing this loop.
+The round artifacts live in `docs/review/pro-rounds/<round-id>/` and include `round.json` identity metadata plus `packet/manifest.json`, `packet/files/`, and the packet diff. Read `docs/review/pro-review-automation.md` before changing this loop.
 
 ## Contract Boundaries
 
@@ -89,6 +91,7 @@ The round artifacts live in `docs/review/pro-rounds/<round-id>/` and include `ro
 - Use a full 3D renderer only when the simulation contract and template explicitly require it.
 - Use SymPy for derivatives, integrals, parametrizations, simplifications, and model checks.
 - Use Playwright headless for final browser validation when visual correctness matters.
+- Keep browser checks versioned when they encode important regressions. For the current function renderer, use `npm run test:function-graph` with `FUNCTION_GRAPH_URL` pointing at the served fixture.
 - For function exercises, read `references/functions.md` and validate domain, derivative, primitive, points, asymptotes, and discontinuities before rendering.
 - For function exercises, compile validated data through `python/compiler/function_graph.py` before rendering; JavaScript should consume the render model instead of reinterpreting expressions.
 - Function scene targets are typed: extrema actions target extrema points, tangent actions require a point id, asymptote actions target asymptote entities, and discontinuity actions target discontinuity entities.
