@@ -209,3 +209,55 @@ function graph browser spec: 5 passed
 ```
 
 The Pro review contract now requires `SCOPE_REVISADO`, lists `FILES_INCLUDED` in every packet, and writes a reproducible `packet/` snapshot for non-dry-run rounds.
+
+## Global Supervisor Extraction
+
+Date: 2026-06-22
+
+Created global skill:
+
+```text
+C:\Users\casti\.codex\skills\codex-pro-supervisor
+```
+
+Configured this repo with:
+
+```text
+codex-supervision.json
+.codex-supervision/
+```
+
+External Pro review round:
+
+```text
+C:\Users\casti\.codex\skills\codex-pro-supervisor\.codex-supervision\pro-rounds\pro-global-supervision-01
+```
+
+Pro dictamen: `cambios solicitados`. Main P0 findings were unsafe path scope escape, missing secret preflight, self-packaging risk, missing packet hash binding, and too-silent `current-work` behavior outside Git. Implemented the first hardening pass before adoption.
+
+Commands:
+
+```powershell
+python -m py_compile C:\Users\casti\.codex\skills\codex-pro-supervisor\scripts\supervise.py
+python C:\Users\casti\.codex\skills\codex-pro-supervisor\scripts\supervise.py self-test
+python C:\Users\casti\.codex\skills\.system\skill-creator\scripts\quick_validate.py C:\Users\casti\.codex\skills\codex-pro-supervisor
+python C:\Users\casti\.codex\skills\codex-pro-supervisor\scripts\supervise.py pack --dry-run --scope .
+python C:\Users\casti\.codex\skills\codex-pro-supervisor\scripts\supervise.py pack --dry-run --scope current-work
+python scripts\pro_review_cycle.py self-test
+python scripts\run_smoke_tests.py
+python C:\Users\casti\.codex\skills\.system\skill-creator\scripts\quick_validate.py .
+```
+
+Result:
+
+```text
+global supervisor py_compile: OK
+global supervisor self-test: OK
+global supervisor skill validation: Skill is valid!
+global supervisor --scope . dry-run: OK, emits FILES_INCLUDED and PACKET_SHA256
+global supervisor current-work outside Git: blocked as expected
+global supervisor secret preflight with .env.supervisor-test: blocked as expected
+local pro_review_cycle self-test: OK
+skill_graphic smoke tests: OK
+skill_graphic quick_validate: Skill is valid!
+```

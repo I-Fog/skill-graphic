@@ -55,7 +55,13 @@ When the user wants ChatGPT Pro to validate or plan the next iteration, use:
 python scripts/pro_review_cycle.py run --transport uia --scope function-renderer --focus "<review focus>"
 ```
 
-Use compact scoped packets by default. Choose `--scope pro-loop`, `--scope function-renderer`, `--scope docs`, or `--scope all` based on the actual review target. Use `--packet full` only for broad audits where Pro must inspect the entire dirty diff. Each round must include `FILES_INCLUDED`, require `SCOPE_REVISADO` in the Pro response, and write a reproducible `packet/` snapshot.
+For supervision that should generalize across projects or threads, prefer the global supervisor:
+
+```powershell
+python C:\Users\casti\.codex\skills\codex-pro-supervisor\scripts\supervise.py run --transport uia --scope function-renderer --focus "<review focus>"
+```
+
+Use compact scoped packets by default. Choose `--scope pro-loop`, `--scope function-renderer`, `--scope docs`, or `--scope all` based on the actual review target. Use `--packet full` only for broad audits where Pro must inspect the entire dirty diff. Each round must include `FILES_INCLUDED`, require `SCOPE_REVISADO` and `PACKET_SHA256` in the Pro response, and write a reproducible `packet/` snapshot.
 
 If UI Automation cannot access the integrated browser, fall back to clipboard mode:
 
@@ -71,6 +77,8 @@ python scripts/pro_review_cycle.py verify <round-id>
 ```
 
 The round artifacts live in `docs/review/pro-rounds/<round-id>/` and include `round.json` identity metadata plus `packet/manifest.json`, `packet/files/`, and the packet diff. Read `docs/review/pro-review-automation.md` before changing this loop.
+
+Global supervisor rounds live in `.codex-supervision/pro-rounds/<round-id>/` and use `codex-supervision.json` for project scopes.
 
 ## Contract Boundaries
 

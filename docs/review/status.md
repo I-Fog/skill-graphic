@@ -17,6 +17,7 @@ Last updated: 2026-06-22
 | Smoke tests | Improved | `scripts/run_smoke_tests.py` | Includes positive fixtures, recursive expected-math checks, expected negative failure metadata, generated function HTML checks, static browser-spec presence checks, and Pro packet contract checks. |
 | Browser validation | Versioned local check | `tests/browser/function_graph.spec.ts`, `docs/review/screenshots/*.png` | Function renderer has a Playwright spec for navigation, boundaries, derivative/primitive visibility, reload state, and mobile overlay separation. No CI browser run yet. |
 | ChatGPT Pro review loop | Improved | `scripts/pro_review_cycle.py`, `docs/review/pro-review-automation.md` | Review rounds use compact scoped packets by default, preserve full-packet fallback, include `FILES_INCLUDED`, require `SCOPE_REVISADO`, write `packet/manifest.json` plus copied files/diff, preserve `round.json`, anchored nonce markers, final `END_REVIEW`, hashes, UIA transport, clipboard fallback, and copied-response prefix trimming. |
+| Global supervision | Initial | `C:\Users\casti\.codex\skills\codex-pro-supervisor`, `codex-supervision.json` | Project-agnostic supervisor skill can package scoped rounds into `.codex-supervision/pro-rounds/`, supports configured scopes, requires `SCOPE_REVISADO` and `PACKET_SHA256`, and blocks unsafe files before sending. |
 
 ## Current Risk Level
 

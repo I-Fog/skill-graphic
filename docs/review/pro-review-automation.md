@@ -13,6 +13,14 @@ Codex changes repo
 
 The transport layer can be UI Automation against the integrated browser, manual clipboard, or a future API-backed adapter. The repo contract lives in `scripts/pro_review_cycle.py`; browser control is intentionally outside the math validators and renderers.
 
+For project-agnostic supervision, use the global skill:
+
+```powershell
+python C:\Users\casti\.codex\skills\codex-pro-supervisor\scripts\supervise.py run --transport uia --scope function-renderer --focus "Revisa el scope actual y dime si queda algun P0."
+```
+
+The global route stores rounds in `.codex-supervision/pro-rounds/` and reads this repo's `codex-supervision.json` scope map. The local `scripts/pro_review_cycle.py` remains as the repo-specific compatibility route.
+
 ## Commands
 
 Run a review round through the integrated browser panel:
@@ -146,7 +154,7 @@ END_REVIEW: <nonce>
 
 Each prompt also includes a `FILES_INCLUDED` block. ChatGPT Pro must review only that scope and must request a follow-up packet when more files are needed.
 
-`ingest` and `verify` require those exact markers in the expected positions. This prevents Codex from accepting the copied prompt, an old answer, a partial streaming answer, a response from a different round, or a response for the wrong scope. The prompt, response, backlog, packet manifest, copied-file hashes, and diff hashes are stored in `round.json` and `packet/manifest.json`; prompt writes, response writes, backlog writes, and manifest writes are atomic. Clipboard ingestion validates the response in memory before writing `response.md`.
+The global supervisor also requires `PACKET_SHA256` in the Pro answer and verifies it against the packet snapshot. `ingest` and `verify` require those exact markers in the expected positions. This prevents Codex from accepting the copied prompt, an old answer, a partial streaming answer, a response from a different round, or a response for the wrong scope. The prompt, response, backlog, packet manifest, copied-file hashes, and diff hashes are stored in `round.json` and `packet/manifest.json`; prompt writes, response writes, backlog writes, and manifest writes are atomic. Clipboard ingestion validates the response in memory before writing `response.md`.
 
 If a copied ChatGPT answer includes UI text before the response, ingestion trims only up to the last exact `ROUND_ID` marker for that same round, then still validates the nonce, final `END_REVIEW`, required sections, and prompt hash. This recovers from browser copy noise without accepting stale or mismatched responses.
 

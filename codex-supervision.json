@@ -1,0 +1,29 @@
+{
+  "project": "skill-graphic",
+  "scopes": {
+    "pro-loop": [
+      "scripts/pro_review_cycle.py",
+      "docs/review/pro-review-automation.md",
+      "docs/review/reviewer-checklist.md",
+      "SKILL.md",
+      "AGENTS.md",
+      "codex-supervision.json"
+    ],
+    "function-renderer": [
+      "assets/templates/function_graph.html",
+      "python/compiler/function_graph.py",
+      "scripts/generate_simulation.py",
+      "scripts/run_smoke_tests.py",
+      "tests/browser/function_graph.spec.ts",
+      "docs/review/validation-log.md",
+      "docs/review/status.md",
+      "codex-supervision.json"
+    ],
+    "docs": [
+      "REVIEW.md",
+      "SKILL.md",
+      "AGENTS.md",
+      "docs/"
+    ]
+  }
+}
