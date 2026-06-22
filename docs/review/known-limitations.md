@@ -2,8 +2,8 @@
 
 ## Generic Engine
 
-- `function_graph.html` is not implemented yet.
-- The first `function_graph` render-model compiler exists for continuous Cartesian function fixtures, but it is not yet connected to a generic HTML renderer.
+- `function_graph.html` exists for the first continuous Cartesian fixture, but it is not yet generalized across asymptotes, discontinuities, multiple functions, or arbitrary pedagogical camera plans.
+- The first `function_graph` render-model compiler is connected to the reusable HTML renderer slice for the cubic fixture.
 - Surface and integral demos still use template-specific rendering logic.
 - The integral visual primitive is sampled numerically in the browser demo, although the validator knows an exact primitive.
 
@@ -24,7 +24,7 @@
 ## Browser Testing
 
 - There is no committed Playwright test suite.
-- Static screenshots are included for review, but they are not a replacement for CI.
+- Static screenshots are included for review, including function graph desktop, mobile, and primitive-scene views, but they are not a replacement for CI.
 - Smoothness and reversibility of timelines are not measured automatically.
 
 ## Security And Portability

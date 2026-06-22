@@ -32,6 +32,12 @@ dist/*.math.json
        |
        v
        dist/*function-graph*.render.json
+       |
+       v
+       assets/templates/function_graph.html
+       |
+       v
+       dist/function-graph-cubic.html
   |
   v
 scripts/generate_simulation.py
@@ -51,6 +57,7 @@ dist/*.html
 - Schema: `schemas/simulation.schema.json`
 - Contract semantics: `python/validator/contract.py`
 - Function render-model compiler: `python/compiler/function_graph.py`
+- Function graph renderer: `assets/templates/function_graph.html`
 - Generator: `scripts/generate_simulation.py`
 - Smoke runner: `scripts/run_smoke_tests.py`
 
@@ -75,3 +82,6 @@ dist/*.html
 
 - `docs/review/screenshots/surface-revolution.png`
 - `docs/review/screenshots/integral-graphic.png`
+- `docs/review/screenshots/function-graph-cubic.png`
+- `docs/review/screenshots/function-graph-cubic-mobile.png`
+- `docs/review/screenshots/function-graph-cubic-primitive.png`

@@ -11,10 +11,11 @@ The current branch should be reviewed as a **scaffold MVP**, not as a finished g
 3. `python/validator/contract.py` - required checks, allowed actions, and target validation.
 4. `python/validator/function_graph.py` - reusable function graph validation.
 5. `python/compiler/function_graph.py` - first function render-model compiler.
-6. `scripts/generate_simulation.py` - validation gate before HTML generation.
-7. `scripts/run_smoke_tests.py` - positive and negative smoke coverage.
-8. `docs/review/status.md` - current implementation status.
-9. `docs/review/known-limitations.md` - known gaps to prioritize.
+6. `assets/templates/function_graph.html` - first reusable Cartesian SVG renderer slice.
+7. `scripts/generate_simulation.py` - validation gate before HTML generation.
+8. `scripts/run_smoke_tests.py` - positive and negative smoke coverage.
+9. `docs/review/status.md` - current implementation status.
+10. `docs/review/known-limitations.md` - known gaps to prioritize.
 
 ## Current Scope
 
@@ -24,13 +25,14 @@ Implemented:
 - Graphical integral demo for `int tan(x)/(2 sen(x)+6) dx`.
 - Reusable `function_graph` contract and validator.
 - First `function_graph` render model for continuous Cartesian function fixtures.
+- First `function_graph.html` renderer for the cubic fixture with timeline, formula overlay, camera motion, tangent/extrema, derivative, and primitive layers.
 - Validation gate with `contract_hash` plus live revalidation before rendering.
 - Typed feature targets for function scenes.
 - Static negative fixtures with expected failure metadata for known false-green cases.
 
 Not implemented yet:
 
-- Generic `function_graph.html` renderer.
+- Broad function renderer coverage for asymptotes, discontinuities, multiple functions, and richer camera plans.
 - Browser automation in CI.
 - Full schema split with `$defs` and `oneOf`.
 
@@ -47,4 +49,4 @@ Use these files when you cannot execute tests:
 
 ## Main Reviewer Question
 
-Does the repo now provide a strong enough validated contract to justify building the generic Cartesian renderer next?
+Does the repo now provide a strong enough validated contract and first renderer slice to justify broadening Cartesian renderer coverage next?

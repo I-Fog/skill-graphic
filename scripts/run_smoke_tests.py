@@ -22,6 +22,7 @@ SURFACE_HTML_OUTPUT = ROOT / "dist" / "surface-revolution.html"
 FUNCTION_EXAMPLE = ROOT / "examples" / "function-graph-cubic" / "input.json"
 FUNCTION_MATH_OUTPUT = ROOT / "dist" / "function-graph-cubic.math.json"
 FUNCTION_RENDER_OUTPUT = ROOT / "dist" / "function-graph-cubic.render.json"
+FUNCTION_HTML_OUTPUT = ROOT / "dist" / "function-graph-cubic.html"
 FUNCTION_EXPECTED = ROOT / "examples" / "function-graph-cubic" / "expected-math.json"
 INTEGRAL_EXAMPLE = ROOT / "examples" / "indefinite-integral-tan-sin" / "input.json"
 INTEGRAL_MATH_OUTPUT = ROOT / "dist" / "indefinite-integral-tan-sin.math.json"
@@ -192,6 +193,43 @@ def check_function_render_model(example: dict, math_result: dict) -> None:
         raise AssertionError("Tangent scene did not compile a tangent for root-center.")
     if render_model["viewport"]["y_min"] >= -2 or render_model["viewport"]["y_max"] <= 2:
         raise AssertionError("Viewport does not frame the cubic extrema.")
+    derivative_viewport = render_model.get("curve_viewports", {}).get("derivative")
+    if not derivative_viewport or derivative_viewport["y_max"] < 11.52:
+        raise AssertionError("Derivative viewport must frame the full derivative curve.")
+
+
+def check_function_html() -> None:
+    assert_contains(
+        FUNCTION_HTML_OUTPUT,
+        [
+            'data-simulation-id="function-graph-cubic"',
+            '<svg id="plot"',
+            'id="timeline"',
+            'id="formula-panel"',
+            'function easeInOutCubic(t)',
+            'function cameraTargetForScene(scene, progress)',
+            'function cameraAt(scene, index, progress)',
+            'function setTimelineValue(value)',
+            'function setTimelineMs(ms)',
+            'function initialTimelineFromUrl()',
+            'window.__functionGraphDebug',
+            'curve.id === "antiderivative" ? "antiderivative primitive"',
+            'url.searchParams.set("ms"',
+            'function_graph_render_model',
+            'curve_viewports',
+            'draw_function_graph',
+            'show_tangent',
+            'show_derivative_graph',
+            'show_antiderivative_graph',
+            'renderModel',
+        ],
+    )
+    html_text = FUNCTION_HTML_OUTPUT.read_text(encoding="utf-8")
+    if "<canvas" in html_text:
+        raise AssertionError("Function graph renderer must use SVG, not canvas.")
+    if "three.module" in html_text or "from 'three'" in html_text or 'from \"three\"' in html_text:
+        raise AssertionError("Function graph renderer must not import Three.js for the Cartesian MVP.")
+    assert "&quot;" not in html_text.split('id="simulation-data"', 1)[1].split("</script>", 1)[0]
 
 
 def assert_expected_validation_failure(example: dict, label: str) -> None:
@@ -298,9 +336,10 @@ def main() -> int:
     check_surface_html()
 
     function_example = json.loads(FUNCTION_EXAMPLE.read_text(encoding="utf-8"))
-    function_result = validate_checked(FUNCTION_EXAMPLE, FUNCTION_MATH_OUTPUT, schema)
+    function_result = generate_checked(FUNCTION_EXAMPLE, FUNCTION_MATH_OUTPUT, FUNCTION_HTML_OUTPUT, schema)
     assert_expected_math(function_result, FUNCTION_EXPECTED)
     check_function_render_model(function_example, function_result)
+    check_function_html()
 
     integral_result = generate_checked(INTEGRAL_EXAMPLE, INTEGRAL_MATH_OUTPUT, INTEGRAL_HTML_OUTPUT, schema)
     assert_expected_math(integral_result, INTEGRAL_EXPECTED)
@@ -311,6 +350,7 @@ def main() -> int:
     print(f"Smoke tests passed: {SURFACE_HTML_OUTPUT}")
     print(f"Smoke tests passed: {FUNCTION_MATH_OUTPUT}")
     print(f"Smoke tests passed: {FUNCTION_RENDER_OUTPUT}")
+    print(f"Smoke tests passed: {FUNCTION_HTML_OUTPUT}")
     print(f"Smoke tests passed: {INTEGRAL_HTML_OUTPUT}")
     return 0
 

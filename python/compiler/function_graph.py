@@ -106,6 +106,10 @@ def _viewport(domain_start: float, domain_end: float, y_values: list[float]) -> 
     }
 
 
+def _viewport_for_curve(curve: dict[str, Any], domain_start: float, domain_end: float) -> dict[str, float]:
+    return _viewport(domain_start, domain_end, _flatten_y_values([curve], []))
+
+
 def _compile_points(
     features: dict[str, Any],
     variable: sp.Symbol,
@@ -189,6 +193,26 @@ def _compile_tangents(
     return tangents
 
 
+def _camera_policy_for(scene: dict[str, Any]) -> dict[str, Any]:
+    action = scene["action"]
+    if action == "trace_point":
+        return {"mode": "trace", "zoom": 0.98, "tilt": 0.28, "focus": "function"}
+    if action == "show_tangent":
+        return {
+            "mode": "targets",
+            "zoom": 0.98,
+            "tilt": 0.28,
+            "targets": [scene.get("args", {}).get("point_id")] if scene.get("args", {}).get("point_id") else scene.get("targets", []),
+        }
+    if action in {"show_extrema", "show_inflection", "show_asymptote", "show_discontinuity"}:
+        return {"mode": "targets", "zoom": 0.98, "tilt": 0.28, "targets": scene.get("targets", [])}
+    if action == "show_derivative_graph":
+        return {"mode": "curve", "zoom": 0.9, "tilt": 0.42, "curve_id": "derivative"}
+    if action == "show_antiderivative_graph":
+        return {"mode": "curve", "zoom": 0.9, "tilt": 0.42, "curve_id": "antiderivative"}
+    return {"mode": "overview", "zoom": 1.0, "tilt": 0.18}
+
+
 def _compile_scenes(simulation: dict[str, Any]) -> list[dict[str, Any]]:
     timeline: list[dict[str, Any]] = []
     cursor = 0
@@ -197,6 +221,7 @@ def _compile_scenes(simulation: dict[str, Any]) -> list[dict[str, Any]]:
         timeline.append(
             {
                 "id": scene["id"],
+                "goal": scene["goal"],
                 "action": scene["action"],
                 "start_ms": cursor,
                 "duration_ms": duration,
@@ -205,6 +230,7 @@ def _compile_scenes(simulation: dict[str, Any]) -> list[dict[str, Any]]:
                 "formula": scene.get("formula", ""),
                 "targets": scene.get("targets", []),
                 "args": scene.get("args", {}),
+                "camera": _camera_policy_for(scene),
             }
         )
         cursor += duration
@@ -262,7 +288,14 @@ def compile_function_graph_render_model(simulation: dict[str, Any], math_result:
     points = _compile_points(features, variable, function, locals_map, parameter_values)
     intervals = _compile_intervals(features, locals_map, parameter_values)
     tangents = _compile_tangents(simulation, points, variable, derivative)
-    viewport = _viewport(_float(domain_start), _float(domain_end), _flatten_y_values(curves, points))
+    numeric_domain_start = _float(domain_start)
+    numeric_domain_end = _float(domain_end)
+    primary_viewport = _viewport(numeric_domain_start, numeric_domain_end, _flatten_y_values([curves[0]], points))
+    full_viewport = _viewport(numeric_domain_start, numeric_domain_end, _flatten_y_values(curves, points))
+    curve_viewports = {
+        curve["id"]: _viewport_for_curve(curve, numeric_domain_start, numeric_domain_end)
+        for curve in curves
+    }
     scenes = _compile_scenes(simulation)
 
     return {
@@ -272,8 +305,10 @@ def compile_function_graph_render_model(simulation: dict[str, Any], math_result:
         "title": simulation["title"],
         "language": simulation["language"],
         "variable": simulation["math"]["variable"],
-        "domain": {"start": _float(domain_start), "end": _float(domain_end)},
-        "viewport": viewport,
+        "domain": {"start": numeric_domain_start, "end": numeric_domain_end},
+        "viewport": primary_viewport,
+        "full_viewport": full_viewport,
+        "curve_viewports": curve_viewports,
         "curves": curves,
         "features": {
             "points": points,

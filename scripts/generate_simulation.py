@@ -9,8 +9,10 @@ from pathlib import Path
 import jsonschema
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "python"))
 sys.path.insert(0, str(ROOT / "python" / "validator"))
 
+from compiler.function_graph import compile_function_graph_render_model  # noqa: E402
 from contract import contract_hash  # noqa: E402
 from validate_math import validate_math  # noqa: E402
 
@@ -81,6 +83,35 @@ def build_indefinite_integral_html(simulation: dict, math_result: dict) -> str:
     return render_template(template, values)
 
 
+def build_function_graph_html(simulation: dict, math_result: dict, output: Path | None = None) -> str:
+    template = (ROOT / "assets" / "templates" / "function_graph.html").read_text(encoding="utf-8")
+
+    check_summary = check_summary_for(math_result)
+    render_model = compile_function_graph_render_model(simulation, math_result)
+    if output is not None:
+        render_output = output.with_suffix(".render.json")
+        render_output.parent.mkdir(parents=True, exist_ok=True)
+        render_output.write_text(json.dumps(render_model, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+
+    render_payload = dict(simulation)
+    render_payload["renderModel"] = render_model
+    render_payload["render"] = {
+        "initialFormula": simulation["scenes"][0].get("formula", simulation["math"]["function"]),
+        "checkSummary": check_summary,
+    }
+
+    values = {
+        "language": html.escape(simulation["language"]),
+        "title": html.escape(simulation["title"]),
+        "simulation_id": html.escape(simulation["id"]),
+        "first_goal": html.escape(simulation["scenes"][0].get("goal", "")),
+        "first_caption": html.escape(simulation["scenes"][0].get("caption", "")),
+        "initial_formula": html.escape(simulation["scenes"][0].get("formula", simulation["math"]["function"])),
+        "simulation_json": json.dumps(render_payload, ensure_ascii=True).replace("</", "<\\/"),
+    }
+    return render_template(template, values)
+
+
 def load_schema() -> dict:
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     jsonschema.Draft202012Validator.check_schema(schema)
@@ -120,6 +151,8 @@ def main() -> int:
         html_output = build_surface_revolution_html(simulation, math_result)
     elif simulation.get("type") == "indefinite_integral":
         html_output = build_indefinite_integral_html(simulation, math_result)
+    elif simulation.get("type") == "function_graph":
+        html_output = build_function_graph_html(simulation, math_result, args.output)
     else:
         print(f"Unsupported simulation type: {simulation.get('type')}", file=sys.stderr)
         return 1

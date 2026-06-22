@@ -1,14 +1,15 @@
 # Review Status
 
-Last updated: 2026-06-21
+Last updated: 2026-06-22
 
 | Area | Status | Evidence | Notes |
 | --- | --- | --- | --- |
 | Skill identity | Done | `SKILL.md`, `agents/openai.yaml` | `skill-graphic` is discoverable and has a documented workflow. |
 | Surface revolution fixture | MVP demo | `examples/surface-revolution/input.json`, `assets/templates/surface_revolution.html` | Works for the canonical OX case; still template-specific. |
 | Integral fixture | MVP demo | `examples/indefinite-integral-tan-sin/input.json`, `assets/templates/indefinite_integral.html` | Graphical meaning comes first: integrand, area, primitive, family. |
-| Function graph contract | Improved | `references/functions.md`, `examples/function-graph-cubic/input.json` | Typed feature targets and validator exist; renderer is pending. |
+| Function graph contract | Improved | `references/functions.md`, `examples/function-graph-cubic/input.json` | Typed feature targets and validator exist. |
 | Function render model | Initial slice | `python/compiler/function_graph.py`, `dist/function-graph-cubic.render.json` | Compiles validated continuous functions into curves, viewport, points, intervals, tangents, and timeline. |
+| Function graph renderer | Initial slice | `assets/templates/function_graph.html`, `dist/function-graph-cubic.html`, `docs/review/screenshots/function-graph-cubic.png`, `docs/review/screenshots/function-graph-cubic-primitive.png` | Renders the validated model as one interactive SVG stage with smooth scrubber, formula overlay, tangent/extrema scenes, derivative/primitive layers, and camera motion. |
 | Schema | Partial | `schemas/simulation.schema.json` | Supports three types; still should be split into `$defs` and `oneOf`. |
 | Contract semantics | Improved | `python/validator/contract.py` | Required checks, allowed actions, slider refs, unique ids, and action-compatible targets are validated. |
 | Math validators | Improved | `python/validator/*.py` | Positive fixtures pass and negative fixtures fail. More edge cases are needed. |
@@ -21,5 +22,5 @@ Last updated: 2026-06-21
 
 - Architectural risk: medium.
 - Math-validation risk: medium.
-- Visual-runtime risk: medium-high until `function_graph.html` exists.
+- Visual-runtime risk: medium: `function_graph.html` exists for the cubic fixture, but generic coverage and automated visual regression still need expansion.
 - Security/portable parsing risk: medium because SymPy parsing is still based on expression strings.

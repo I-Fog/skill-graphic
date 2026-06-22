@@ -12,8 +12,34 @@
   "viewport": {
     "x_min": -2.464,
     "x_max": 2.464,
+    "y_min": -5.01952,
+    "y_max": 5.01952
+  },
+  "full_viewport": {
+    "x_min": -2.464,
+    "x_max": 2.464,
     "y_min": -5.91616,
     "y_max": 13.38816
+  },
+  "curve_viewports": {
+    "function": {
+      "x_min": -2.464,
+      "x_max": 2.464,
+      "y_min": -5.01952,
+      "y_max": 5.01952
+    },
+    "derivative": {
+      "x_min": -2.464,
+      "x_max": 2.464,
+      "y_min": -4.7424,
+      "y_max": 13.2624
+    },
+    "antiderivative": {
+      "x_min": -2.464,
+      "x_max": 2.464,
+      "y_min": -2.5196875912,
+      "y_max": 0.2699665276
+    }
   },
   "curves": [
     {
@@ -1322,6 +1348,7 @@
     "scenes": [
       {
         "id": "axes",
+        "goal": "Fijar el plano y el dominio visual.",
         "action": "draw_axes",
         "start_ms": 0,
         "duration_ms": 700,
@@ -1329,10 +1356,16 @@
         "caption": "Trabajamos en -2.2 <= x <= 2.2.",
         "formula": "f(x)=x^3-3x",
         "targets": [],
-        "args": {}
+        "args": {},
+        "camera": {
+          "mode": "overview",
+          "zoom": 1.0,
+          "tilt": 0.18
+        }
       },
       {
         "id": "curve",
+        "goal": "Dibujar la curva de la funcion.",
         "action": "draw_function_graph",
         "start_ms": 700,
         "duration_ms": 1200,
@@ -1340,10 +1373,16 @@
         "caption": "La curva muestra tres cortes con el eje x.",
         "formula": "f(x)=x^3-3x",
         "targets": [],
-        "args": {}
+        "args": {},
+        "camera": {
+          "mode": "overview",
+          "zoom": 1.0,
+          "tilt": 0.18
+        }
       },
       {
         "id": "trace",
+        "goal": "Recorrer la funcion con un punto movil.",
         "action": "trace_point",
         "start_ms": 1900,
         "duration_ms": 1300,
@@ -1351,10 +1390,17 @@
         "caption": "El punto permite leer coordenadas y comportamiento local.",
         "formula": "",
         "targets": [],
-        "args": {}
+        "args": {},
+        "camera": {
+          "mode": "trace",
+          "zoom": 0.98,
+          "tilt": 0.28,
+          "focus": "function"
+        }
       },
       {
         "id": "tangent",
+        "goal": "Relacionar pendiente y derivada.",
         "action": "show_tangent",
         "start_ms": 3200,
         "duration_ms": 1100,
@@ -1366,10 +1412,19 @@
         ],
         "args": {
           "point_id": "root-center"
+        },
+        "camera": {
+          "mode": "targets",
+          "zoom": 0.98,
+          "tilt": 0.28,
+          "targets": [
+            "root-center"
+          ]
         }
       },
       {
         "id": "extrema",
+        "goal": "Marcar maximo y minimo locales.",
         "action": "show_extrema",
         "start_ms": 4300,
         "duration_ms": 1100,
@@ -1380,10 +1435,20 @@
           "max-local",
           "min-local"
         ],
-        "args": {}
+        "args": {},
+        "camera": {
+          "mode": "targets",
+          "zoom": 0.98,
+          "tilt": 0.28,
+          "targets": [
+            "max-local",
+            "min-local"
+          ]
+        }
       },
       {
         "id": "inflection",
+        "goal": "Marcar el cambio de concavidad.",
         "action": "show_inflection",
         "start_ms": 5400,
         "duration_ms": 900,
@@ -1393,10 +1458,19 @@
         "targets": [
           "inflection-origin"
         ],
-        "args": {}
+        "args": {},
+        "camera": {
+          "mode": "targets",
+          "zoom": 0.98,
+          "tilt": 0.28,
+          "targets": [
+            "inflection-origin"
+          ]
+        }
       },
       {
         "id": "derivative",
+        "goal": "Dibujar la derivada como funcion relacionada.",
         "action": "show_derivative_graph",
         "start_ms": 6300,
         "duration_ms": 1200,
@@ -1404,10 +1478,17 @@
         "caption": "Los ceros de f' coinciden con los extremos de f.",
         "formula": "f'(x)=3x^2-3",
         "targets": [],
-        "args": {}
+        "args": {},
+        "camera": {
+          "mode": "curve",
+          "zoom": 0.9,
+          "tilt": 0.42,
+          "curve_id": "derivative"
+        }
       },
       {
         "id": "primitive",
+        "goal": "Conectar la funcion con una primitiva.",
         "action": "show_antiderivative_graph",
         "start_ms": 7500,
         "duration_ms": 1200,
@@ -1415,10 +1496,17 @@
         "caption": "Derivar la primitiva recupera la funcion original.",
         "formula": "F(x)=x^4/4-3x^2/2",
         "targets": [],
-        "args": {}
+        "args": {},
+        "camera": {
+          "mode": "curve",
+          "zoom": 0.9,
+          "tilt": 0.42,
+          "curve_id": "antiderivative"
+        }
       },
       {
         "id": "validation",
+        "goal": "Mostrar las comprobaciones simbolicas.",
         "action": "show_validation",
         "start_ms": 8700,
         "duration_ms": 800,
@@ -1426,7 +1514,12 @@
         "caption": "Validamos dominio, derivada, primitiva y puntos antes de dibujar.",
         "formula": "",
         "targets": [],
-        "args": {}
+        "args": {},
+        "camera": {
+          "mode": "overview",
+          "zoom": 1.0,
+          "tilt": 0.18
+        }
       }
     ],
     "easing": "easeInOutCubic"

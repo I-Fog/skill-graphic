@@ -90,7 +90,7 @@ The round artifacts live in `docs/review/pro-rounds/<round-id>/` and include `ro
 - Use SymPy for derivatives, integrals, parametrizations, simplifications, and model checks.
 - Use Playwright headless for final browser validation when visual correctness matters.
 - For function exercises, read `references/functions.md` and validate domain, derivative, primitive, points, asymptotes, and discontinuities before rendering.
-- For function exercises, compile validated data through `python/compiler/function_graph.py` before building a generic renderer; JavaScript should consume the render model instead of reinterpreting expressions.
+- For function exercises, compile validated data through `python/compiler/function_graph.py` before rendering; JavaScript should consume the render model instead of reinterpreting expressions.
 - Function scene targets are typed: extrema actions target extrema points, tangent actions require a point id, asymptote actions target asymptote entities, and discontinuity actions target discontinuity entities.
 - For integral exercises, read `references/integrals.md` and choose the smallest method that makes the transformation exact.
 

@@ -15,7 +15,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ROUNDS_ROOT = ROOT / "docs" / "review" / "pro-rounds"
 ROUND_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}$")
-MAX_DIFF_CHARS = 60000
+MAX_DIFF_CHARS = 140000
+MAX_UNTRACKED_TEXT_CHARS = 60000
 PLACEHOLDER_RESPONSE = "# ChatGPT Pro response\n\nPega aqui la respuesta completa si no se captura automaticamente.\n"
 PLACEHOLDER_BACKLOG = "# Review Backlog\n\nPendiente de ingerir respuesta.\n"
 SAFE_POPUP_BUTTONS = {
@@ -80,7 +81,8 @@ def round_path(round_id: str) -> Path:
 
 
 def sha256_text(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    canonical = text.replace("\r\n", "\n").replace("\r", "\n")
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def atomic_write_text(path: Path, text: str) -> None:
@@ -118,8 +120,9 @@ def git_value(command: list[str]) -> str:
 
 def dirty_patch_text() -> str:
     patch = command_text(["git", "diff", "--binary"])
+    staged_patch = command_text(["git", "diff", "--cached", "--binary"])
     untracked = describe_untracked_files()
-    payload = f"{patch}\n\n{untracked}"
+    payload = f"{patch}\n\n{staged_patch}\n\n{untracked}"
     if len(payload) <= MAX_DIFF_CHARS:
         return payload
     digest = sha256_text(payload)
@@ -142,7 +145,7 @@ def describe_untracked_files() -> str:
             continue
         data = path.read_bytes()
         digest = hashlib.sha256(data).hexdigest()
-        if len(data) > 20000 or b"\x00" in data:
+        if len(data) > MAX_UNTRACKED_TEXT_CHARS or b"\x00" in data:
             blocks.append(f"\n## {relative}\n[content omitted: bytes={len(data)}, sha256={digest}]")
             continue
         try:

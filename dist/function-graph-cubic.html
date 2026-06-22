@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Funcion cubica con extremos, derivada y primitiva</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f8fb;
+      --ink: #142033;
+      --muted: #64748b;
+      --axis: #273341;
+      --grid: rgba(100, 116, 139, 0.18);
+      --primary: #0f766e;
+      --secondary: #2563eb;
+      --primitive: #7c3aed;
+      --hot: #b42318;
+      --soft-hot: rgba(180, 35, 24, 0.16);
+      --panel: rgba(255, 255, 255, 0.93);
+      --border: rgba(20, 32, 51, 0.13);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) 62px;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 0;
+      border-bottom: 1px solid var(--border);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(246, 248, 251, 0.86));
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .caption {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      max-width: min(520px, calc(100% - 36px));
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+      z-index: 2;
+    }
+
+    .caption strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .caption span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .formula-panel {
+      position: absolute;
+      right: 18px;
+      top: 18px;
+      width: min(360px, calc(100% - 36px));
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+      opacity: 0;
+      transform: translateY(-6px);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .formula-panel.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .formula-panel small {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .formula-panel code {
+      display: block;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: var(--ink);
+      font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .steps {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(86px, 1fr));
+      gap: 8px;
+      width: min(640px, calc(100% - 36px));
+      z-index: 2;
+    }
+
+    .step {
+      min-height: 54px;
+      padding: 8px 9px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      opacity: 0.45;
+    }
+
+    .step.active {
+      opacity: 1;
+      border-color: rgba(15, 118, 110, 0.42);
+      background: rgba(240, 253, 250, 0.93);
+    }
+
+    .step strong {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .step span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.25;
+    }
+
+    .grid-line { stroke: var(--grid); stroke-width: 1; }
+    .axis { stroke: var(--axis); stroke-width: 2.2; stroke-linecap: round; }
+    .axis-label { fill: var(--ink); font-size: 14px; opacity: 0; }
+    .tick-label { fill: var(--muted); font-size: 10px; }
+    .curve {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0;
+    }
+    .curve.primary { stroke: var(--primary); stroke-width: 4.2; }
+    .curve.derivative { stroke: var(--secondary); stroke-width: 3.2; }
+    .curve.primitive { stroke: var(--primitive); stroke-width: 3.2; }
+    .curve.support { stroke-dasharray: 7 7; }
+    .interval-band { fill: var(--soft-hot); opacity: 0; }
+    .tangent { stroke: var(--hot); stroke-width: 2.4; stroke-linecap: round; opacity: 0; }
+    .trace-line { stroke: rgba(20, 32, 51, 0.22); stroke-width: 1.2; stroke-dasharray: 4 5; opacity: 0; }
+    .point { fill: var(--hot); opacity: 0; }
+    .point-label { fill: var(--ink); font-size: 12px; opacity: 0; }
+    .trace-point { fill: var(--primary); stroke: #fff; stroke-width: 2; opacity: 0; }
+    .legend text { fill: var(--muted); font-size: 12px; }
+    .legend line { stroke-linecap: round; stroke-width: 4; }
+
+    footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    button {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    button:hover { border-color: rgba(15, 118, 110, 0.5); }
+
+    .timeline {
+      flex: 1;
+      min-width: 180px;
+      accent-color: var(--primary);
+    }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .speed { width: 120px; accent-color: var(--secondary); }
+
+    @media (max-width: 860px) {
+      body { overflow: hidden; }
+      main { height: 100vh; grid-template-rows: minmax(0, 1fr) 112px; }
+      .formula-panel { top: auto; bottom: 92px; left: 12px; right: 12px; width: auto; }
+      .caption { top: 12px; left: 12px; max-width: calc(100% - 24px); }
+      .steps { display: none; }
+      footer { flex-wrap: wrap; align-content: center; }
+      .timeline { order: 2; flex-basis: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 1ms !important;
+        transition-duration: 1ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main data-simulation-id="function-graph-cubic">
+    <section class="stage" aria-label="Function graph simulation stage">
+      <div class="caption" id="caption">
+        <strong>Fijar el plano y el dominio visual.</strong>
+        <span>Trabajamos en -2.2 &lt;= x &lt;= 2.2.</span>
+      </div>
+      <div class="formula-panel" id="formula-panel">
+        <small>Formula activa</small>
+        <code id="formula">f(x)=x^3-3x</code>
+      </div>
+      <div class="steps" id="steps"></div>
+      <svg id="plot" viewBox="0 0 900 560" role="img" aria-label="Function graph simulation">
+        <g id="camera">
+          <g id="grid"></g>
+          <g id="intervals"></g>
+          <g id="axes"></g>
+          <g id="curves"></g>
+          <g id="tangents"></g>
+          <g id="trace"></g>
+          <g id="points"></g>
+          <g id="labels"></g>
+        </g>
+        <g class="legend" transform="translate(672 58)">
+          <line x1="0" y1="0" x2="32" y2="0" stroke="var(--primary)"></line>
+          <text x="42" y="4">f(x)</text>
+          <line x1="0" y1="24" x2="32" y2="24" stroke="var(--secondary)"></line>
+          <text x="42" y="28">f'(x)</text>
+          <line x1="0" y1="48" x2="32" y2="48" stroke="var(--primitive)"></line>
+          <text x="42" y="52">F(x)</text>
+        </g>
+      </svg>
+    </section>
+    <footer>
+      <button id="prev" type="button" title="Previous scene">‹</button>
+      <button id="play" type="button" title="Play or pause">▶</button>
+      <button id="next" type="button" title="Next scene">›</button>
+      <button id="replay" type="button" title="Replay">↻</button>
+      <input id="timeline" class="timeline" type="range" min="0" max="1" step="0.001" value="0" aria-label="Timeline">
+      <label>speed <input id="speed" class="speed" type="range" min="0.35" max="1.8" step="0.05" value="1"></label>
+    </footer>
+  </main>
+
+  <script type="application/json" id="simulation-data">{"id": "function-graph-cubic", "type": "function_graph", "title": "Funcion cubica con extremos, derivada y primitiva", "language": "es", "parameters": {}, "math": {"function": "x**3 - 3*x", "variable": "x", "domain": ["-2.2", "2.2"], "derivative": "3*x**2 - 3", "antiderivative": "x**4/4 - 3*x**2/2"}, "features": {"special_points": [{"id": "root-left", "kind": "root", "x": "-sqrt(3)", "y": "0", "label": "raiz"}, {"id": "root-center", "kind": "root", "x": "0", "y": "0", "label": "raiz e inflexion"}, {"id": "root-right", "kind": "root", "x": "sqrt(3)", "y": "0", "label": "raiz"}, {"id": "max-local", "kind": "extremum", "x": "-1", "y": "2", "label": "maximo local"}, {"id": "min-local", "kind": "extremum", "x": "1", "y": "-2", "label": "minimo local"}, {"id": "inflection-origin", "kind": "inflection", "x": "0", "y": "0", "label": "inflexion"}], "highlighted_intervals": [{"id": "decreasing-middle", "start": "-1", "end": "1", "kind": "decreasing", "label": "decrece"}, {"id": "increasing-left", "start": "-2.2", "end": "-1", "kind": "increasing", "label": "crece"}, {"id": "increasing-right", "start": "1", "end": "2.2", "kind": "increasing", "label": "crece"}], "vertical_asymptotes": [], "discontinuities": []}, "controls": {"playback": true}, "scenes": [{"id": "axes", "goal": "Fijar el plano y el dominio visual.", "action": "draw_axes", "duration_ms": 700, "caption": "Trabajamos en -2.2 <= x <= 2.2.", "formula": "f(x)=x^3-3x"}, {"id": "curve", "goal": "Dibujar la curva de la funcion.", "action": "draw_function_graph", "duration_ms": 1200, "caption": "La curva muestra tres cortes con el eje x.", "formula": "f(x)=x^3-3x"}, {"id": "trace", "goal": "Recorrer la funcion con un punto movil.", "action": "trace_point", "duration_ms": 1300, "caption": "El punto permite leer coordenadas y comportamiento local."}, {"id": "tangent", "goal": "Relacionar pendiente y derivada.", "action": "show_tangent", "duration_ms": 1100, "caption": "La pendiente viene de f'(x)=3x^2-3.", "formula": "f'(x)=3x^2-3", "targets": ["root-center"], "args": {"point_id": "root-center"}}, {"id": "extrema", "goal": "Marcar maximo y minimo locales.", "action": "show_extrema", "duration_ms": 1100, "caption": "En x=-1 y x=1 la derivada se anula.", "formula": "f'(-1)=0,\\quad f'(1)=0", "targets": ["max-local", "min-local"]}, {"id": "inflection", "goal": "Marcar el cambio de concavidad.", "action": "show_inflection", "duration_ms": 900, "caption": "En x=0 se anula la segunda derivada.", "formula": "f''(x)=6x", "targets": ["inflection-origin"]}, {"id": "derivative", "goal": "Dibujar la derivada como funcion relacionada.", "action": "show_derivative_graph", "duration_ms": 1200, "caption": "Los ceros de f' coinciden con los extremos de f.", "formula": "f'(x)=3x^2-3"}, {"id": "primitive", "goal": "Conectar la funcion con una primitiva.", "action": "show_antiderivative_graph", "duration_ms": 1200, "caption": "Derivar la primitiva recupera la funcion original.", "formula": "F(x)=x^4/4-3x^2/2"}, {"id": "validation", "goal": "Mostrar las comprobaciones simbolicas.", "action": "show_validation", "duration_ms": 800, "caption": "Validamos dominio, derivada, primitiva y puntos antes de dibujar."}], "checks": ["function_expression_is_valid", "visual_domain_is_ordered", "derivative_matches_function", "antiderivative_matches_function", "declared_points_match_function", "declared_intervals_match_function", "declared_asymptotes_match_function", "declared_discontinuities_match_function"], "renderModel": {"schema_version": 1, "simulation_id": "function-graph-cubic", "type": "function_graph_render_model", "title": "Funcion cubica con extremos, derivada y primitiva", "language": "es", "variable": "x", "domain": {"start": -2.2, "end": 2.2}, "viewport": {"x_min": -2.464, "x_max": 2.464, "y_min": -5.01952, "y_max": 5.01952}, "full_viewport": {"x_min": -2.464, "x_max": 2.464, "y_min": -5.91616, "y_max": 13.38816}, "curve_viewports": {"function": {"x_min": -2.464, "x_max": 2.464, "y_min": -5.01952, "y_max": 5.01952}, "derivative": {"x_min": -2.464, "x_max": 2.464, "y_min": -4.7424, "y_max": 13.2624}, "antiderivative": {"x_min": -2.464, "x_max": 2.464, "y_min": -2.5196875912, "y_max": 0.2699665276}}, "curves": [{"id": "function", "role": "primary", "label": "f(x)", "expression": "x*(x**2 - 3)", "segments": [[{"x": -2.2, "y": -4.048}, {"x": -2.1541666667, "y": -3.5337683015}, {"x": -2.1083333333, "y": -3.0466880787}, {"x": -2.0625, "y": -2.5861816406}, {"x": -2.0166666667, "y": -2.1516712963}, {"x": -1.9708333333, "y": -1.7425793547}, {"x": -1.925, "y": -1.358328125}, {"x": -1.8791666667, "y": -0.9983399161}, {"x": -1.8333333333, "y": -0.662037037}, {"x": -1.7875, "y": -0.3488417969}, {"x": -1.7416666667, "y": -0.0581765046}, {"x": -1.6958333333, "y": 0.2105365307}, {"x": -1.65, "y": 0.457875}, {"x": -1.6041666667, "y": 0.6844165943}, {"x": -1.5583333333, "y": 0.8907390046}, {"x": -1.5125, "y": 1.0774199219}, {"x": -1.4666666667, "y": 1.245037037}, {"x": -1.4208333333, "y": 1.3941680411}, {"x": -1.375, "y": 1.525390625}, {"x": -1.3291666667, "y": 1.6392824797}, {"x": -1.2833333333, "y": 1.7364212963}, {"x": -1.2375, "y": 1.8173847656}, {"x": -1.1916666667, "y": 1.8827505787}, {"x": -1.1458333333, "y": 1.9330964265}, {"x": -1.1, "y": 1.969}, {"x": -1.0541666667, "y": 1.9910389902}, {"x": -1.0083333333, "y": 1.999791088}, {"x": -0.9625, "y": 1.9958339844}, {"x": -0.9166666667, "y": 1.9797453704}, {"x": -0.8708333333, "y": 1.9521029369}, {"x": -0.825, "y": 1.913484375}, {"x": -0.7791666667, "y": 1.8644673756}, {"x": -0.7333333333, "y": 1.8056296296}, {"x": -0.6875, "y": 1.7375488281}, {"x": -0.6416666667, "y": 1.660802662}, {"x": -0.5958333333, "y": 1.5759688223}, {"x": -0.55, "y": 1.483625}, {"x": -0.5041666667, "y": 1.384348886}, {"x": -0.4583333333, "y": 1.2787181713}, {"x": -0.4125, "y": 1.1673105469}, {"x": -0.3666666667, "y": 1.0507037037}, {"x": -0.3208333333, "y": 0.9294753328}, {"x": -0.275, "y": 0.804203125}, {"x": -0.2291666667, "y": 0.6754647714}, {"x": -0.1833333333, "y": 0.543837963}, {"x": -0.1375, "y": 0.4099003906}, {"x": -0.0916666667, "y": 0.2742297454}, {"x": -0.0458333333, "y": 0.1374037182}, {"x": 0.0, "y": 0.0}, {"x": 0.0458333333, "y": -0.1374037182}, {"x": 0.0916666667, "y": -0.2742297454}, {"x": 0.1375, "y": -0.4099003906}, {"x": 0.1833333333, "y": -0.543837963}, {"x": 0.2291666667, "y": -0.6754647714}, {"x": 0.275, "y": -0.804203125}, {"x": 0.3208333333, "y": -0.9294753328}, {"x": 0.3666666667, "y": -1.0507037037}, {"x": 0.4125, "y": -1.1673105469}, {"x": 0.4583333333, "y": -1.2787181713}, {"x": 0.5041666667, "y": -1.384348886}, {"x": 0.55, "y": -1.483625}, {"x": 0.5958333333, "y": -1.5759688223}, {"x": 0.6416666667, "y": -1.660802662}, {"x": 0.6875, "y": -1.7375488281}, {"x": 0.7333333333, "y": -1.8056296296}, {"x": 0.7791666667, "y": -1.8644673756}, {"x": 0.825, "y": -1.913484375}, {"x": 0.8708333333, "y": -1.9521029369}, {"x": 0.9166666667, "y": -1.9797453704}, {"x": 0.9625, "y": -1.9958339844}, {"x": 1.0083333333, "y": -1.999791088}, {"x": 1.0541666667, "y": -1.9910389902}, {"x": 1.1, "y": -1.969}, {"x": 1.1458333333, "y": -1.9330964265}, {"x": 1.1916666667, "y": -1.8827505787}, {"x": 1.2375, "y": -1.8173847656}, {"x": 1.2833333333, "y": -1.7364212963}, {"x": 1.3291666667, "y": -1.6392824797}, {"x": 1.375, "y": -1.525390625}, {"x": 1.4208333333, "y": -1.3941680411}, {"x": 1.4666666667, "y": -1.245037037}, {"x": 1.5125, "y": -1.0774199219}, {"x": 1.5583333333, "y": -0.8907390046}, {"x": 1.6041666667, "y": -0.6844165943}, {"x": 1.65, "y": -0.457875}, {"x": 1.6958333333, "y": -0.2105365307}, {"x": 1.7416666667, "y": 0.0581765046}, {"x": 1.7875, "y": 0.3488417969}, {"x": 1.8333333333, "y": 0.662037037}, {"x": 1.8791666667, "y": 0.9983399161}, {"x": 1.925, "y": 1.358328125}, {"x": 1.9708333333, "y": 1.7425793547}, {"x": 2.0166666667, "y": 2.1516712963}, {"x": 2.0625, "y": 2.5861816406}, {"x": 2.1083333333, "y": 3.0466880787}, {"x": 2.1541666667, "y": 3.5337683015}, {"x": 2.2, "y": 4.048}]]}, {"id": "derivative", "role": "support", "label": "f'(x)", "expression": "3*x**2 - 3", "segments": [[{"x": -2.2, "y": 11.52}, {"x": -2.1541666667, "y": 10.9213020833}, {"x": -2.1083333333, "y": 10.3352083333}, {"x": -2.0625, "y": 9.76171875}, {"x": -2.0166666667, "y": 9.2008333333}, {"x": -1.9708333333, "y": 8.6525520833}, {"x": -1.925, "y": 8.116875}, {"x": -1.8791666667, "y": 7.5938020833}, {"x": -1.8333333333, "y": 7.0833333333}, {"x": -1.7875, "y": 6.58546875}, {"x": -1.7416666667, "y": 6.1002083333}, {"x": -1.6958333333, "y": 5.6275520833}, {"x": -1.65, "y": 5.1675}, {"x": -1.6041666667, "y": 4.7200520833}, {"x": -1.5583333333, "y": 4.2852083333}, {"x": -1.5125, "y": 3.86296875}, {"x": -1.4666666667, "y": 3.4533333333}, {"x": -1.4208333333, "y": 3.0563020833}, {"x": -1.375, "y": 2.671875}, {"x": -1.3291666667, "y": 2.3000520833}, {"x": -1.2833333333, "y": 1.9408333333}, {"x": -1.2375, "y": 1.59421875}, {"x": -1.1916666667, "y": 1.2602083333}, {"x": -1.1458333333, "y": 0.9388020833}, {"x": -1.1, "y": 0.63}, {"x": -1.0541666667, "y": 0.3338020833}, {"x": -1.0083333333, "y": 0.0502083333}, {"x": -0.9625, "y": -0.22078125}, {"x": -0.9166666667, "y": -0.4791666667}, {"x": -0.8708333333, "y": -0.7249479167}, {"x": -0.825, "y": -0.958125}, {"x": -0.7791666667, "y": -1.1786979167}, {"x": -0.7333333333, "y": -1.3866666667}, {"x": -0.6875, "y": -1.58203125}, {"x": -0.6416666667, "y": -1.7647916667}, {"x": -0.5958333333, "y": -1.9349479167}, {"x": -0.55, "y": -2.0925}, {"x": -0.5041666667, "y": -2.2374479167}, {"x": -0.4583333333, "y": -2.3697916667}, {"x": -0.4125, "y": -2.48953125}, {"x": -0.3666666667, "y": -2.5966666667}, {"x": -0.3208333333, "y": -2.6911979167}, {"x": -0.275, "y": -2.773125}, {"x": -0.2291666667, "y": -2.8424479167}, {"x": -0.1833333333, "y": -2.8991666667}, {"x": -0.1375, "y": -2.94328125}, {"x": -0.0916666667, "y": -2.9747916667}, {"x": -0.0458333333, "y": -2.9936979167}, {"x": 0.0, "y": -3.0}, {"x": 0.0458333333, "y": -2.9936979167}, {"x": 0.0916666667, "y": -2.9747916667}, {"x": 0.1375, "y": -2.94328125}, {"x": 0.1833333333, "y": -2.8991666667}, {"x": 0.2291666667, "y": -2.8424479167}, {"x": 0.275, "y": -2.773125}, {"x": 0.3208333333, "y": -2.6911979167}, {"x": 0.3666666667, "y": -2.5966666667}, {"x": 0.4125, "y": -2.48953125}, {"x": 0.4583333333, "y": -2.3697916667}, {"x": 0.5041666667, "y": -2.2374479167}, {"x": 0.55, "y": -2.0925}, {"x": 0.5958333333, "y": -1.9349479167}, {"x": 0.6416666667, "y": -1.7647916667}, {"x": 0.6875, "y": -1.58203125}, {"x": 0.7333333333, "y": -1.3866666667}, {"x": 0.7791666667, "y": -1.1786979167}, {"x": 0.825, "y": -0.958125}, {"x": 0.8708333333, "y": -0.7249479167}, {"x": 0.9166666667, "y": -0.4791666667}, {"x": 0.9625, "y": -0.22078125}, {"x": 1.0083333333, "y": 0.0502083333}, {"x": 1.0541666667, "y": 0.3338020833}, {"x": 1.1, "y": 0.63}, {"x": 1.1458333333, "y": 0.9388020833}, {"x": 1.1916666667, "y": 1.2602083333}, {"x": 1.2375, "y": 1.59421875}, {"x": 1.2833333333, "y": 1.9408333333}, {"x": 1.3291666667, "y": 2.3000520833}, {"x": 1.375, "y": 2.671875}, {"x": 1.4208333333, "y": 3.0563020833}, {"x": 1.4666666667, "y": 3.4533333333}, {"x": 1.5125, "y": 3.86296875}, {"x": 1.5583333333, "y": 4.2852083333}, {"x": 1.6041666667, "y": 4.7200520833}, {"x": 1.65, "y": 5.1675}, {"x": 1.6958333333, "y": 5.6275520833}, {"x": 1.7416666667, "y": 6.1002083333}, {"x": 1.7875, "y": 6.58546875}, {"x": 1.8333333333, "y": 7.0833333333}, {"x": 1.8791666667, "y": 7.5938020833}, {"x": 1.925, "y": 8.116875}, {"x": 1.9708333333, "y": 8.6525520833}, {"x": 2.0166666667, "y": 9.2008333333}, {"x": 2.0625, "y": 9.76171875}, {"x": 2.1083333333, "y": 10.3352083333}, {"x": 2.1541666667, "y": 10.9213020833}, {"x": 2.2, "y": 11.52}]]}, {"id": "antiderivative", "role": "support", "label": "F(x)", "expression": "x**2*(x**2 - 6)/4", "segments": [[{"x": -2.2, "y": -1.4036}, {"x": -2.1541666667, "y": -1.5772440501}, {"x": -2.1083333333, "y": -1.7279435752}, {"x": -2.0625, "y": -1.8569297791}, {"x": -2.0166666667, "y": -1.9654073881}, {"x": -1.9708333333, "y": -2.0545546513}, {"x": -1.925, "y": -2.1255233398}, {"x": -1.8791666667, "y": -2.1794387478}, {"x": -1.8333333333, "y": -2.2173996914}, {"x": -1.7875, "y": -2.2404785095}, {"x": -1.7416666667, "y": -2.2497210636}, {"x": -1.6958333333, "y": -2.2461467375}, {"x": -1.65, "y": -2.2307484375}, {"x": -1.6041666667, "y": -2.2044925925}, {"x": -1.5583333333, "y": -2.1683191539}, {"x": -1.5125, "y": -2.1231415955}, {"x": -1.4666666667, "y": -2.0698469136}, {"x": -1.4208333333, "y": -2.0092956271}, {"x": -1.375, "y": -1.9423217773}, {"x": -1.3291666667, "y": -1.8697329282}, {"x": -1.2833333333, "y": -1.7923101659}, {"x": -1.2375, "y": -1.7108080994}, {"x": -1.1916666667, "y": -1.6259548599}, {"x": -1.1458333333, "y": -1.5384521013}, {"x": -1.1, "y": -1.448975}, {"x": -1.0541666667, "y": -1.3581722547}, {"x": -1.0083333333, "y": -1.2666660868}, {"x": -0.9625, "y": -1.17505224}, {"x": -0.9166666667, "y": -1.0838999807}, {"x": -0.8708333333, "y": -0.9937520977}, {"x": -0.825, "y": -0.9051249023}, {"x": -0.7791666667, "y": -0.8185082284}, {"x": -0.7333333333, "y": -0.7343654321}, {"x": -0.6875, "y": -0.6531333923}, {"x": -0.6416666667, "y": -0.5752225104}, {"x": -0.5958333333, "y": -0.50101671}, {"x": -0.55, "y": -0.4308734375}, {"x": -0.5041666667, "y": -0.3651236617}, {"x": -0.4583333333, "y": -0.3040718738}, {"x": -0.4125, "y": -0.2479960876}, {"x": -0.3666666667, "y": -0.1971478395}, {"x": -0.3208333333, "y": -0.1517521881}, {"x": -0.275, "y": -0.1120077148}, {"x": -0.2291666667, "y": -0.0780865234}, {"x": -0.1833333333, "y": -0.05013424}, {"x": -0.1375, "y": -0.0282700134}, {"x": -0.0916666667, "y": -0.012586515}, {"x": -0.0458333333, "y": -0.0031499384}, {"x": 0.0, "y": 0.0}, {"x": 0.0458333333, "y": -0.0031499384}, {"x": 0.0916666667, "y": -0.012586515}, {"x": 0.1375, "y": -0.0282700134}, {"x": 0.1833333333, "y": -0.05013424}, {"x": 0.2291666667, "y": -0.0780865234}, {"x": 0.275, "y": -0.1120077148}, {"x": 0.3208333333, "y": -0.1517521881}, {"x": 0.3666666667, "y": -0.1971478395}, {"x": 0.4125, "y": -0.2479960876}, {"x": 0.4583333333, "y": -0.3040718738}, {"x": 0.5041666667, "y": -0.3651236617}, {"x": 0.55, "y": -0.4308734375}, {"x": 0.5958333333, "y": -0.50101671}, {"x": 0.6416666667, "y": -0.5752225104}, {"x": 0.6875, "y": -0.6531333923}, {"x": 0.7333333333, "y": -0.7343654321}, {"x": 0.7791666667, "y": -0.8185082284}, {"x": 0.825, "y": -0.9051249023}, {"x": 0.8708333333, "y": -0.9937520977}, {"x": 0.9166666667, "y": -1.0838999807}, {"x": 0.9625, "y": -1.17505224}, {"x": 1.0083333333, "y": -1.2666660868}, {"x": 1.0541666667, "y": -1.3581722547}, {"x": 1.1, "y": -1.448975}, {"x": 1.1458333333, "y": -1.5384521013}, {"x": 1.1916666667, "y": -1.6259548599}, {"x": 1.2375, "y": -1.7108080994}, {"x": 1.2833333333, "y": -1.7923101659}, {"x": 1.3291666667, "y": -1.8697329282}, {"x": 1.375, "y": -1.9423217773}, {"x": 1.4208333333, "y": -2.0092956271}, {"x": 1.4666666667, "y": -2.0698469136}, {"x": 1.5125, "y": -2.1231415955}, {"x": 1.5583333333, "y": -2.1683191539}, {"x": 1.6041666667, "y": -2.2044925925}, {"x": 1.65, "y": -2.2307484375}, {"x": 1.6958333333, "y": -2.2461467375}, {"x": 1.7416666667, "y": -2.2497210636}, {"x": 1.7875, "y": -2.2404785095}, {"x": 1.8333333333, "y": -2.2173996914}, {"x": 1.8791666667, "y": -2.1794387478}, {"x": 1.925, "y": -2.1255233398}, {"x": 1.9708333333, "y": -2.0545546513}, {"x": 2.0166666667, "y": -1.9654073881}, {"x": 2.0625, "y": -1.8569297791}, {"x": 2.1083333333, "y": -1.7279435752}, {"x": 2.1541666667, "y": -1.5772440501}, {"x": 2.2, "y": -1.4036}]]}], "features": {"points": [{"id": "root-left", "kind": "root", "label": "raiz", "x": -1.7320508076, "y": 0.0, "x_expr": "-sqrt(3)", "y_expr": "0"}, {"id": "root-center", "kind": "root", "label": "raiz e inflexion", "x": 0.0, "y": 0.0, "x_expr": "0", "y_expr": "0"}, {"id": "root-right", "kind": "root", "label": "raiz", "x": 1.7320508076, "y": 0.0, "x_expr": "sqrt(3)", "y_expr": "0"}, {"id": "max-local", "kind": "extremum", "label": "maximo local", "x": -1.0, "y": 2.0, "x_expr": "-1", "y_expr": "2"}, {"id": "min-local", "kind": "extremum", "label": "minimo local", "x": 1.0, "y": -2.0, "x_expr": "1", "y_expr": "-2"}, {"id": "inflection-origin", "kind": "inflection", "label": "inflexion", "x": 0.0, "y": 0.0, "x_expr": "0", "y_expr": "0"}], "intervals": [{"id": "decreasing-middle", "kind": "decreasing", "label": "decrece", "start": -1.0, "end": 1.0, "start_expr": "-1", "end_expr": "1"}, {"id": "increasing-left", "kind": "increasing", "label": "crece", "start": -2.2, "end": -1.0, "start_expr": "-2.20000000000000", "end_expr": "-1"}, {"id": "increasing-right", "kind": "increasing", "label": "crece", "start": 1.0, "end": 2.2, "start_expr": "1", "end_expr": "2.20000000000000"}], "vertical_asymptotes": [], "discontinuities": [], "tangents": [{"id": "tangent-root-center", "point_id": "root-center", "slope": -3.0, "line": [{"x": -0.55, "y": 1.65}, {"x": 0.55, "y": -1.65}]}]}, "timeline": {"duration_ms": 9500, "scenes": [{"id": "axes", "goal": "Fijar el plano y el dominio visual.", "action": "draw_axes", "start_ms": 0, "duration_ms": 700, "end_ms": 700, "caption": "Trabajamos en -2.2 <= x <= 2.2.", "formula": "f(x)=x^3-3x", "targets": [], "args": {}, "camera": {"mode": "overview", "zoom": 1.0, "tilt": 0.18}}, {"id": "curve", "goal": "Dibujar la curva de la funcion.", "action": "draw_function_graph", "start_ms": 700, "duration_ms": 1200, "end_ms": 1900, "caption": "La curva muestra tres cortes con el eje x.", "formula": "f(x)=x^3-3x", "targets": [], "args": {}, "camera": {"mode": "overview", "zoom": 1.0, "tilt": 0.18}}, {"id": "trace", "goal": "Recorrer la funcion con un punto movil.", "action": "trace_point", "start_ms": 1900, "duration_ms": 1300, "end_ms": 3200, "caption": "El punto permite leer coordenadas y comportamiento local.", "formula": "", "targets": [], "args": {}, "camera": {"mode": "trace", "zoom": 0.98, "tilt": 0.28, "focus": "function"}}, {"id": "tangent", "goal": "Relacionar pendiente y derivada.", "action": "show_tangent", "start_ms": 3200, "duration_ms": 1100, "end_ms": 4300, "caption": "La pendiente viene de f'(x)=3x^2-3.", "formula": "f'(x)=3x^2-3", "targets": ["root-center"], "args": {"point_id": "root-center"}, "camera": {"mode": "targets", "zoom": 0.98, "tilt": 0.28, "targets": ["root-center"]}}, {"id": "extrema", "goal": "Marcar maximo y minimo locales.", "action": "show_extrema", "start_ms": 4300, "duration_ms": 1100, "end_ms": 5400, "caption": "En x=-1 y x=1 la derivada se anula.", "formula": "f'(-1)=0,\\quad f'(1)=0", "targets": ["max-local", "min-local"], "args": {}, "camera": {"mode": "targets", "zoom": 0.98, "tilt": 0.28, "targets": ["max-local", "min-local"]}}, {"id": "inflection", "goal": "Marcar el cambio de concavidad.", "action": "show_inflection", "start_ms": 5400, "duration_ms": 900, "end_ms": 6300, "caption": "En x=0 se anula la segunda derivada.", "formula": "f''(x)=6x", "targets": ["inflection-origin"], "args": {}, "camera": {"mode": "targets", "zoom": 0.98, "tilt": 0.28, "targets": ["inflection-origin"]}}, {"id": "derivative", "goal": "Dibujar la derivada como funcion relacionada.", "action": "show_derivative_graph", "start_ms": 6300, "duration_ms": 1200, "end_ms": 7500, "caption": "Los ceros de f' coinciden con los extremos de f.", "formula": "f'(x)=3x^2-3", "targets": [], "args": {}, "camera": {"mode": "curve", "zoom": 0.9, "tilt": 0.42, "curve_id": "derivative"}}, {"id": "primitive", "goal": "Conectar la funcion con una primitiva.", "action": "show_antiderivative_graph", "start_ms": 7500, "duration_ms": 1200, "end_ms": 8700, "caption": "Derivar la primitiva recupera la funcion original.", "formula": "F(x)=x^4/4-3x^2/2", "targets": [], "args": {}, "camera": {"mode": "curve", "zoom": 0.9, "tilt": 0.42, "curve_id": "antiderivative"}}, {"id": "validation", "goal": "Mostrar las comprobaciones simbolicas.", "action": "show_validation", "start_ms": 8700, "duration_ms": 800, "end_ms": 9500, "caption": "Validamos dominio, derivada, primitiva y puntos antes de dibujar.", "formula": "", "targets": [], "args": {}, "camera": {"mode": "overview", "zoom": 1.0, "tilt": 0.18}}], "easing": "easeInOutCubic"}, "checks": {"function_expression_is_valid": true, "visual_domain_is_ordered": true, "derivative_matches_function": true, "antiderivative_matches_function": true, "declared_points_match_function": true, "declared_intervals_match_function": true, "declared_asymptotes_match_function": true, "declared_discontinuities_match_function": true}, "contract_hash": "823cd6d7ed10b193af6d4e682f26b7a23f9373505640a4bde18e147c72200437"}, "render": {"initialFormula": "f(x)=x^3-3x", "checkSummary": "Validated: function_expression_is_valid, visual_domain_is_ordered, derivative_matches_function, antiderivative_matches_function, declared_points_match_function, declared_intervals_match_function, declared_asymptotes_match_function, declared_discontinuities_match_function"}}</script>
+  <script>
+    const payload = JSON.parse(document.getElementById("simulation-data").textContent);
+    const model = payload.renderModel;
+    const scenes = model.timeline.scenes;
+    const totalDuration = Math.max(1, model.timeline.duration_ms);
+
+    const plot = document.getElementById("plot");
+    const gridGroup = document.getElementById("grid");
+    const axesGroup = document.getElementById("axes");
+    const intervalsGroup = document.getElementById("intervals");
+    const curvesGroup = document.getElementById("curves");
+    const tangentsGroup = document.getElementById("tangents");
+    const pointsGroup = document.getElementById("points");
+    const labelsGroup = document.getElementById("labels");
+    const traceGroup = document.getElementById("trace");
+    const caption = document.getElementById("caption");
+    const captionTitle = caption.querySelector("strong");
+    const captionText = caption.querySelector("span");
+    const formulaPanel = document.getElementById("formula-panel");
+    const formula = document.getElementById("formula");
+    const steps = document.getElementById("steps");
+    const timeline = document.getElementById("timeline");
+    const speed = document.getElementById("speed");
+    const play = document.getElementById("play");
+    const prev = document.getElementById("prev");
+    const next = document.getElementById("next");
+    const replay = document.getElementById("replay");
+
+    const width = 900;
+    const height = 560;
+    const margin = { left: 82, right: 70, top: 52, bottom: 70 };
+    let currentMs = initialTimelineFromUrl() * totalDuration;
+    let playing = false;
+    let lastFrame = null;
+    let activeSceneIndex = 0;
+
+    const baseCamera = {...model.viewport};
+    const curveById = Object.fromEntries(model.curves.map((curve) => [curve.id, curve]));
+    const pointsById = Object.fromEntries(model.features.points.map((point) => [point.id, point]));
+    const tangentsByPoint = Object.fromEntries(model.features.tangents.map((tangent) => [tangent.point_id, tangent]));
+    const allFunctionPoints = curveById.function.segments.flat();
+
+    function easeInOutCubic(t) {
+      const clamped = Math.max(0, Math.min(1, t));
+      return clamped < 0.5 ? 4 * clamped * clamped * clamped : 1 - Math.pow(-2 * clamped + 2, 3) / 2;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function lerpCamera(from, to, t) {
+      return {
+        x_min: lerp(from.x_min, to.x_min, t),
+        x_max: lerp(from.x_max, to.x_max, t),
+        y_min: lerp(from.y_min, to.y_min, t),
+        y_max: lerp(from.y_max, to.y_max, t),
+      };
+    }
+
+    function cameraFromPoints(points, policy) {
+      if (!points.length) return baseCamera;
+      const xs = points.map((point) => point.x);
+      const ys = points.map((point) => point.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      const baseW = baseCamera.x_max - baseCamera.x_min;
+      const baseH = baseCamera.y_max - baseCamera.y_min;
+      const zoom = policy.zoom || 1;
+      const contentW = Math.max(maxX - minX, baseW * zoom);
+      const contentH = Math.max(maxY - minY, baseH * zoom);
+      return {
+        x_min: cx - contentW / 2,
+        x_max: cx + contentW / 2,
+        y_min: cy - contentH / 2,
+        y_max: cy + contentH / 2,
+      };
+    }
+
+    function cameraTargetForScene(scene, progress) {
+      const policy = scene.camera || { mode: "overview", zoom: 1, tilt: 0.18 };
+      let focusPoints = [];
+      if (policy.mode === "targets") {
+        focusPoints = (policy.targets || []).map((id) => pointsById[id]).filter(Boolean);
+      }
+      if (policy.mode === "trace") {
+        focusPoints = [sampleFunctionAt(progress)];
+      }
+      if (policy.mode === "curve" && policy.curve_id && curveById[policy.curve_id]) {
+        return (model.curve_viewports && model.curve_viewports[policy.curve_id]) || cameraFromPoints(curveById[policy.curve_id].segments.flat(), policy);
+      }
+      return cameraFromPoints(focusPoints, policy);
+    }
+
+    function cameraAt(scene, index, progress) {
+      const eased = easeInOutCubic(progress);
+      const startCamera = index === 0 ? baseCamera : cameraTargetForScene(scenes[index - 1], 1);
+      const endCamera = cameraTargetForScene(scene, progress);
+      const startTilt = index === 0 ? 0 : (scenes[index - 1].camera && scenes[index - 1].camera.tilt ? scenes[index - 1].camera.tilt : 0.18);
+      const endTilt = scene.camera && scene.camera.tilt ? scene.camera.tilt : 0.18;
+      return {
+        camera: lerpCamera(startCamera, endCamera, eased),
+        tilt: lerp(startTilt, endTilt, eased),
+      };
+    }
+
+    function project(point, camera, tilt = 0) {
+      const xRatio = (point.x - camera.x_min) / (camera.x_max - camera.x_min);
+      const yRatio = (point.y - camera.y_min) / (camera.y_max - camera.y_min);
+      const x = margin.left + xRatio * (width - margin.left - margin.right);
+      const y = height - margin.bottom - yRatio * (height - margin.top - margin.bottom);
+      const lean = tilt * (y - height / 2) * 0.09;
+      return { x: x + lean, y };
+    }
+
+    function pathForSegment(segment, camera, tilt = 0, fraction = 1) {
+      const count = Math.max(2, Math.ceil(segment.length * clamp(fraction, 0, 1)));
+      return segment.slice(0, count).map((point, index) => {
+        const projected = project(point, camera, tilt);
+        return `${index === 0 ? "M" : "L"}${projected.x.toFixed(2)} ${projected.y.toFixed(2)}`;
+      }).join(" ");
+    }
+
+    function setAttributes(element, attrs) {
+      Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, String(value)));
+    }
+
+    function createSvg(tag, attrs = {}) {
+      const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      setAttributes(element, attrs);
+      return element;
+    }
+
+    function buildStaticDom() {
+      model.curves.forEach((curve) => {
+        curve.segments.forEach((segment, index) => {
+          const visualClass =
+            curve.id === "function" ? "primary" :
+            curve.id === "antiderivative" ? "antiderivative primitive" :
+            curve.id;
+          const path = createSvg("path", {
+            id: `curve-${curve.id}-${index}`,
+            class: `curve ${visualClass} ${curve.role === "support" ? "support" : ""}`,
+          });
+          curvesGroup.appendChild(path);
+        });
+      });
+
+      model.features.intervals.forEach((interval) => {
+        intervalsGroup.appendChild(createSvg("rect", { id: `interval-${interval.id}`, class: "interval-band" }));
+      });
+
+      model.features.tangents.forEach((tangent) => {
+        tangentsGroup.appendChild(createSvg("line", { id: tangent.id, class: "tangent" }));
+      });
+
+      model.features.points.forEach((point) => {
+        pointsGroup.appendChild(createSvg("circle", { id: `point-${point.id}`, class: "point", r: 5.5 }));
+        const label = createSvg("text", { id: `label-${point.id}`, class: "point-label" });
+        label.textContent = point.label;
+        labelsGroup.appendChild(label);
+      });
+
+      traceGroup.appendChild(createSvg("line", { id: "trace-x", class: "trace-line" }));
+      traceGroup.appendChild(createSvg("line", { id: "trace-y", class: "trace-line" }));
+      traceGroup.appendChild(createSvg("circle", { id: "trace-point", class: "trace-point", r: 6 }));
+
+      const stepGroups = [
+        ["axes", "Ejes", "Dominio y escala"],
+        ["curve", "Curva", "f(x) como objeto central"],
+        ["local", "Local", "punto, pendiente y extremos"],
+        ["related", "Relacion", "derivada y primitiva"],
+        ["valid", "Check", "comprobacion simbolica"],
+      ];
+      stepGroups.forEach(([id, title, text]) => {
+        const item = document.createElement("div");
+        item.className = "step";
+        item.dataset.step = id;
+        item.innerHTML = `<strong>${title}</strong><span>${text}</span>`;
+        steps.appendChild(item);
+      });
+    }
+
+    function drawAxes(camera, progress, tilt) {
+      axesGroup.replaceChildren();
+      gridGroup.replaceChildren();
+      const xTicks = niceTicks(camera.x_min, camera.x_max, 8);
+      const yTicks = niceTicks(camera.y_min, camera.y_max, 7);
+      xTicks.forEach((value) => {
+        const a = project({ x: value, y: camera.y_min }, camera, tilt);
+        const b = project({ x: value, y: camera.y_max }, camera, tilt);
+        gridGroup.appendChild(createSvg("line", { class: "grid-line", x1: a.x, y1: a.y, x2: b.x, y2: b.y }));
+      });
+      yTicks.forEach((value) => {
+        const a = project({ x: camera.x_min, y: value }, camera, tilt);
+        const b = project({ x: camera.x_max, y: value }, camera, tilt);
+        gridGroup.appendChild(createSvg("line", { class: "grid-line", x1: a.x, y1: a.y, x2: b.x, y2: b.y }));
+      });
+
+      const xStart = project({ x: camera.x_min, y: 0 }, camera, tilt);
+      const xEnd = project({ x: camera.x_max, y: 0 }, camera, tilt);
+      const yStart = project({ x: 0, y: camera.y_min }, camera, tilt);
+      const yEnd = project({ x: 0, y: camera.y_max }, camera, tilt);
+      const axisProgress = clamp(progress, 0, 1);
+      axesGroup.appendChild(createSvg("line", {
+        id: "x-axis",
+        class: "axis",
+        x1: xStart.x,
+        y1: xStart.y,
+        x2: lerp(xStart.x, xEnd.x, axisProgress),
+        y2: lerp(xStart.y, xEnd.y, axisProgress),
+      }));
+      axesGroup.appendChild(createSvg("line", {
+        id: "y-axis",
+        class: "axis",
+        x1: yStart.x,
+        y1: yStart.y,
+        x2: lerp(yStart.x, yEnd.x, axisProgress),
+        y2: lerp(yStart.y, yEnd.y, axisProgress),
+      }));
+      const xLabel = createSvg("text", { class: "axis-label", x: xEnd.x + 8, y: xEnd.y + 4 });
+      xLabel.textContent = "x";
+      xLabel.style.opacity = axisProgress > 0.96 ? 1 : 0;
+      axesGroup.appendChild(xLabel);
+      const yLabel = createSvg("text", { class: "axis-label", x: yEnd.x - 12, y: yEnd.y - 10 });
+      yLabel.textContent = "y";
+      yLabel.style.opacity = axisProgress > 0.96 ? 1 : 0;
+      axesGroup.appendChild(yLabel);
+    }
+
+    function niceTicks(min, max, count) {
+      const raw = (max - min) / count;
+      const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+      const step = Math.ceil(raw / pow) * pow;
+      const ticks = [];
+      for (let value = Math.ceil(min / step) * step; value <= max; value += step) {
+        ticks.push(Number(value.toFixed(8)));
+      }
+      return ticks;
+    }
+
+    function updateCurves(camera, visibility, tilt) {
+      model.curves.forEach((curve) => {
+        curve.segments.forEach((segment, index) => {
+          const path = document.getElementById(`curve-${curve.id}-${index}`);
+          const fraction = curve.id === "function" ? visibility.functionDraw : 1;
+          path.setAttribute("d", pathForSegment(segment, camera, tilt, fraction));
+          path.style.opacity = visibility[curve.id] || 0;
+        });
+      });
+    }
+
+    function pointIdsForScene(scene) {
+      const ids = new Set(scene.targets || []);
+      if (scene.action === "show_tangent" && scene.args && scene.args.point_id) ids.add(scene.args.point_id);
+      return ids;
+    }
+
+    function completedPointIds(sceneIndex) {
+      const ids = new Set();
+      scenes.slice(0, sceneIndex).forEach((scene) => {
+        pointIdsForScene(scene).forEach((id) => ids.add(id));
+      });
+      return ids;
+    }
+
+    function intervalIdsForScene(scene) {
+      return new Set((scene.targets || []).filter((id) => model.features.intervals.some((interval) => interval.id === id)));
+    }
+
+    function completedIntervalIds(sceneIndex) {
+      const ids = new Set();
+      scenes.slice(0, sceneIndex).forEach((scene) => {
+        intervalIdsForScene(scene).forEach((id) => ids.add(id));
+      });
+      return ids;
+    }
+
+    function completedTangentPointIds(sceneIndex) {
+      const ids = new Set();
+      scenes.slice(0, sceneIndex).forEach((scene) => {
+        if (scene.action === "show_tangent" && scene.args && scene.args.point_id) ids.add(scene.args.point_id);
+      });
+      return ids;
+    }
+
+    function updateIntervals(camera, visibility, tilt, scene, sceneIndex) {
+      const activeIntervals = intervalIdsForScene(scene);
+      const previousIntervals = completedIntervalIds(sceneIndex);
+      model.features.intervals.forEach((interval) => {
+        const rect = document.getElementById(`interval-${interval.id}`);
+        const a = project({ x: interval.start, y: camera.y_min }, camera, tilt);
+        const b = project({ x: interval.end, y: camera.y_max }, camera, tilt);
+        setAttributes(rect, {
+          x: Math.min(a.x, b.x),
+          y: Math.min(a.y, b.y),
+          width: Math.abs(b.x - a.x),
+          height: Math.abs(b.y - a.y),
+        });
+        rect.style.opacity = activeIntervals.has(interval.id) ? visibility.intervals : previousIntervals.has(interval.id) ? 0.18 : 0;
+      });
+    }
+
+    function updatePoints(camera, visibility, tilt, scene, sceneIndex) {
+      const activePoints = pointIdsForScene(scene);
+      const previousPoints = completedPointIds(sceneIndex);
+      model.features.points.forEach((point) => {
+        const projected = project(point, camera, tilt);
+        const circle = document.getElementById(`point-${point.id}`);
+        const label = document.getElementById(`label-${point.id}`);
+        setAttributes(circle, { cx: projected.x, cy: projected.y });
+        setAttributes(label, { x: projected.x + 8, y: projected.y - 9 });
+        const isActive = activePoints.has(point.id);
+        let opacity = isActive ? visibility.points : previousPoints.has(point.id) ? 0.72 : 0;
+        if (!isActive && visibility.points > 0 && ["show_extrema", "show_inflection", "show_tangent"].includes(scene.action)) {
+          opacity = Math.max(opacity, 0.14);
+        }
+        circle.style.opacity = opacity;
+        label.style.opacity = opacity > 0.7 ? 1 : 0;
+      });
+    }
+
+    function updateTangents(camera, visibility, tilt, scene, sceneIndex) {
+      const activePointId = scene.action === "show_tangent" && scene.args ? scene.args.point_id : "";
+      const previousTangents = completedTangentPointIds(sceneIndex);
+      model.features.tangents.forEach((tangent) => {
+        const line = document.getElementById(tangent.id);
+        const a = project(tangent.line[0], camera, tilt);
+        const b = project(tangent.line[1], camera, tilt);
+        setAttributes(line, { x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+        line.style.opacity = tangent.point_id === activePointId ? visibility.tangent : previousTangents.has(tangent.point_id) ? 0.2 : 0;
+      });
+    }
+
+    function updateTrace(camera, visibility, progress, tilt) {
+      const sample = sampleFunctionAt(progress);
+      const projected = project(sample, camera, tilt);
+      const xBase = project({ x: sample.x, y: 0 }, camera, tilt);
+      const yBase = project({ x: 0, y: sample.y }, camera, tilt);
+      setAttributes(document.getElementById("trace-point"), { cx: projected.x, cy: projected.y });
+      setAttributes(document.getElementById("trace-x"), { x1: projected.x, y1: projected.y, x2: projected.x, y2: xBase.y });
+      setAttributes(document.getElementById("trace-y"), { x1: projected.x, y1: projected.y, x2: yBase.x, y2: projected.y });
+      traceGroup.querySelectorAll("*").forEach((element) => {
+        element.style.opacity = visibility.trace;
+      });
+    }
+
+    function sampleFunctionAt(progress) {
+      const points = allFunctionPoints;
+      const position = clamp(progress, 0, 1) * (points.length - 1);
+      const index = Math.floor(position);
+      const nextIndex = Math.min(points.length - 1, index + 1);
+      const local = position - index;
+      return {
+        x: lerp(points[index].x, points[nextIndex].x, local),
+        y: lerp(points[index].y, points[nextIndex].y, local),
+      };
+    }
+
+    function visibilityFor(scene, progress, sceneIndex) {
+      const before = scenes.slice(0, sceneIndex).map((item) => item.action);
+      const eased = easeInOutCubic(progress);
+      const hasBefore = (action) => before.includes(action);
+      const functionDraw = scene.action === "draw_function_graph" ? eased : hasBefore("draw_function_graph") ? 1 : 0;
+      return {
+        axes: 1,
+        functionDraw,
+        function: functionDraw > 0 ? 1 : 0,
+        trace: scene.action === "trace_point" ? eased : 0,
+        tangent: scene.action === "show_tangent" ? eased : 0,
+        points: ["show_extrema", "show_inflection", "show_tangent"].includes(scene.action) ? eased : 0,
+        intervals: scene.action === "show_extrema" ? 0.45 * eased : 0,
+        derivative: scene.action === "show_derivative_graph" ? eased : hasBefore("show_derivative_graph") ? 0.42 : 0,
+        antiderivative: scene.action === "show_antiderivative_graph" ? eased : hasBefore("show_antiderivative_graph") ? 0.42 : 0,
+      };
+    }
+
+    function sceneAt(ms) {
+      const clamped = clamp(ms, 0, totalDuration);
+      if (clamped <= 0) {
+        const first = scenes[0];
+        return { scene: first, index: 0, progress: 0 };
+      }
+      if (clamped >= totalDuration) {
+        const lastIndex = scenes.length - 1;
+        return { scene: scenes[lastIndex], index: lastIndex, progress: 1 };
+      }
+      let index = scenes.findIndex((scene) => clamped >= scene.start_ms && clamped < scene.end_ms);
+      if (index < 0) index = scenes.length - 1;
+      const scene = scenes[index];
+      const progress = scene.duration_ms ? clamp((clamped - scene.start_ms) / scene.duration_ms, 0, 1) : 1;
+      return { scene, index, progress };
+    }
+
+    function render() {
+      const { scene, index, progress } = sceneAt(currentMs);
+      const easedProgress = easeInOutCubic(progress);
+      const { camera, tilt } = cameraAt(scene, index, progress);
+      drawAxes(camera, index === 0 ? easedProgress : 1, tilt);
+      const visibility = visibilityFor(scene, progress, index);
+      updateIntervals(camera, visibility, tilt, scene, index);
+      updateCurves(camera, visibility, tilt);
+      updateTangents(camera, visibility, tilt, scene, index);
+      updateTrace(camera, visibility, easedProgress, tilt);
+      updatePoints(camera, visibility, tilt, scene, index);
+      updateCaption(scene);
+      updateFormula(scene, index, progress);
+      updateSteps(scene, index);
+      timeline.value = String(currentMs / totalDuration);
+      activeSceneIndex = index;
+    }
+
+    function updateCaption(scene) {
+      captionTitle.textContent = scene.goal || scene.id;
+      captionText.textContent = scene.caption || "";
+    }
+
+    function updateFormula(scene, index, progress) {
+      let opacity = 0;
+      if (scene.formula) {
+        const fadeIn = clamp((progress - 0.08) / 0.18, 0, 1);
+        const fadeOut = clamp((0.92 - progress) / 0.18, 0, 1);
+        opacity = Math.min(fadeIn, fadeOut);
+        formula.textContent = scene.formula.replaceAll("\\quad", "   ");
+      }
+      if (!scene.formula && index === scenes.length - 1) {
+        formula.textContent = payload.render.checkSummary;
+        opacity = easeInOutCubic(progress);
+      }
+      formulaPanel.style.opacity = opacity;
+      formulaPanel.style.transform = `translateY(${(-6 * (1 - opacity)).toFixed(2)}px)`;
+    }
+
+    function updateSteps(scene, index) {
+      const action = scene.action;
+      const active =
+        index <= 1 ? "curve" :
+        action === "trace_point" || action === "show_tangent" || action === "show_extrema" || action === "show_inflection" ? "local" :
+        action === "show_derivative_graph" || action === "show_antiderivative_graph" ? "related" :
+        action === "show_validation" ? "valid" : "axes";
+      steps.querySelectorAll(".step").forEach((step) => {
+        step.classList.toggle("active", step.dataset.step === active);
+      });
+    }
+
+    function setTimelineValue(value) {
+      setTimelineMs(clamp(value, 0, 1) * totalDuration);
+    }
+
+    function setTimelineMs(ms) {
+      currentMs = clamp(ms, 0, totalDuration);
+      render();
+      const url = new URL(window.location.href);
+      url.searchParams.set("t", Number(currentMs / totalDuration).toFixed(3));
+      url.searchParams.set("ms", Number(currentMs).toFixed(3));
+      window.history.replaceState(null, "", url);
+    }
+
+    function initialTimelineFromUrl() {
+      const params = new URL(window.location.href).searchParams;
+      const msValue = Number(params.get("ms"));
+      if (Number.isFinite(msValue)) return clamp(msValue / totalDuration, 0, 1);
+      const value = Number(params.get("t") || "0");
+      return Number.isFinite(value) ? clamp(value, 0, 1) : 0;
+    }
+
+    window.__functionGraphDebug = {
+      sceneAt,
+      cameraAt,
+      cameraTargetForScene,
+      setTimelineValue,
+      setTimelineMs,
+      model,
+    };
+
+    function frame(timestamp) {
+      if (!playing) return;
+      if (lastFrame === null) lastFrame = timestamp;
+      const delta = timestamp - lastFrame;
+      lastFrame = timestamp;
+      currentMs += delta * Number(speed.value);
+      if (currentMs >= totalDuration) {
+        currentMs = totalDuration;
+        playing = false;
+        play.textContent = "▶";
+      }
+      render();
+      if (playing) requestAnimationFrame(frame);
+    }
+
+    timeline.addEventListener("input", (event) => {
+      playing = false;
+      play.textContent = "▶";
+      setTimelineValue(Number(event.target.value));
+    });
+
+    play.addEventListener("click", () => {
+      playing = !playing;
+      play.textContent = playing ? "Ⅱ" : "▶";
+      lastFrame = null;
+      if (playing) requestAnimationFrame(frame);
+    });
+
+    replay.addEventListener("click", () => {
+      currentMs = 0;
+      playing = true;
+      play.textContent = "Ⅱ";
+      lastFrame = null;
+      render();
+      requestAnimationFrame(frame);
+    });
+
+    prev.addEventListener("click", () => {
+      const previous = scenes[Math.max(0, sceneAt(currentMs).index - 1)];
+      setTimelineMs(previous.start_ms);
+    });
+
+    next.addEventListener("click", () => {
+      const following = scenes[Math.min(scenes.length - 1, sceneAt(currentMs).index + 1)];
+      setTimelineMs(following.start_ms);
+    });
+
+    buildStaticDom();
+    render();
+  </script>
+</body>
+</html>
